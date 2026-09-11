@@ -473,6 +473,37 @@
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
+  // ---------------- Google Drive upload ----------------
+  const GOOGLE_DRIVE_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxufUsWhlmpSf_kS0ofvYbcWmVfUtko18RP8xau2o2g89PUI3kCfbZajXsMnW2D3fU_lA/exec";
+
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        try {
+          const result = String(reader.result || "");
+          resolve(result.split(",")[1] || "");
+        } catch (err) { reject(err); }
+      };
+      reader.onerror = () => reject(reader.error || new Error("Could not read the generated document."));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function saveGeneratedExamToGoogleDrive(blob, filename) {
+    const fileBase64 = await blobToBase64(blob);
+    const payload = JSON.stringify({ filename, fileBase64 });
+
+    // text/plain avoids a browser CORS preflight. The Apps Script endpoint
+    // receives the JSON body in e.postData.contents and saves it to Drive.
+    await fetch(GOOGLE_DRIVE_WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: payload
+    });
+  }
+
   function submissionToDocData(f) {
     return {
       collegeName: "The Redeemed College of Missions",
@@ -713,6 +744,10 @@
       const filename = `${(f.courseCode || "Exam").replace(/\s+/g, "_")}_Exam_Questions.docx`;
       downloadBlob(blob, filename);
 
+      statusEl.className = "rea-status";
+      statusEl.textContent = "Document generated. Saving a copy to Google Drive…";
+      await saveGeneratedExamToGoogleDrive(blob, filename);
+
       const record = {
         id: "sub_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8),
         timestamp: new Date().toISOString(),
@@ -732,7 +767,7 @@
       await persistSubmission(record);
 
       statusEl.className = "rea-status ok";
-      statusEl.textContent = "Downloaded — and saved to the shared record for the exam office.";
+      statusEl.textContent = "Downloaded — and saved to Google Drive.";
       state.form = makeForm();
       render();
     } catch (e) {
