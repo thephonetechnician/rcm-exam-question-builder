@@ -13,10 +13,18 @@
     props.push(`<w:sz w:val="${sz}"/>`, `<w:szCs w:val="${sz}"/>`);
     return `<w:r><w:rPr>${props.join("")}</w:rPr><w:t xml:space="preserve">${esc(text)}</w:t></w:r>`;
   }
+  function runMultiline(text, opts) {
+    return String(text == null ? "" : text)
+      .split(/\r\n|\r|\n/)
+      .map((line, index, lines) => run(line, opts) + (index < lines.length - 1 ? "<w:r><w:br/></w:r>" : ""))
+      .join("");
+  }
   function para(runsXml, opts) {
     opts = opts || {};
     const pPr = [];
     if (opts.jc) pPr.push(`<w:jc w:val="${opts.jc}"/>`);
+    if (opts.keepNext) pPr.push("<w:keepNext/>");
+    if (opts.keepLines) pPr.push("<w:keepLines/>");
     if (opts.tabs) pPr.push(`<w:tabs>${opts.tabs.map(t => `<w:tab w:val="${t.val}" w:pos="${t.pos}"/>`).join("")}</w:tabs>`);
     if (opts.indLeft != null) {
       let attrs = `w:left="${opts.indLeft}"`;
@@ -118,30 +126,66 @@
 
     const TAB_POS = 450;
     let questionsXml = "";
-    data.questions.forEach((q) => {
-      if (q.parts.length === 1) {
-        const p = q.parts[0];
+
+    if (data.paperType === "Objective") {
+      const OPTION_LEFT = 900;
+      const OPTION_TAB = 1350;
+      (data.questions || []).forEach((q) => {
+        const options = Array.isArray(q.options) ? q.options : [];
         questionsXml += para(
-          run(`${q.number}.`) + run("\t") + run(`${p.text}  (${p.marks} marks)`),
-          { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 200 }
-        );
-      } else {
-        q.parts.forEach((p, idx) => {
-          if (idx === 0) {
-            questionsXml += para(
-              run(`${q.number}.`) + run("\t") + run(`(${p.label})  ${p.text}  (${p.marks} marks)`),
-              { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 40 }
-            );
-          } else {
-            const isLast = idx === q.parts.length - 1;
-            questionsXml += para(
-              run(`(${p.label})  ${p.text}  (${p.marks} marks)`),
-              { indLeft: TAB_POS, spacingAfter: isLast ? 200 : 40 }
-            );
+          run(`${q.number}.`) + run("\t") + runMultiline(q.text),
+          {
+            indLeft: TAB_POS,
+            hanging: TAB_POS,
+            tabs: [{ val: "left", pos: TAB_POS }],
+            spacingAfter: 40,
+            keepNext: true,
+            keepLines: true
           }
+        );
+
+        options.forEach((option, index) => {
+          const isLast = index === options.length - 1;
+          questionsXml += para(
+            run(`${option.label}.`) + run("\t") + runMultiline(option.text),
+            {
+              indLeft: OPTION_LEFT,
+              hanging: 450,
+              tabs: [{ val: "left", pos: OPTION_TAB }],
+              spacingAfter: isLast ? 200 : 20,
+              keepNext: !isLast,
+              keepLines: true
+            }
+          );
         });
-      }
-    });
+      });
+    } else {
+      // Existing Theory question layout — intentionally retained unchanged.
+      data.questions.forEach((q) => {
+        if (q.parts.length === 1) {
+          const p = q.parts[0];
+          questionsXml += para(
+            run(`${q.number}.`) + run("\t") + run(`${p.text}  (${p.marks} marks)`),
+            { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 200 }
+          );
+        } else {
+          q.parts.forEach((p, idx) => {
+            if (idx === 0) {
+              questionsXml += para(
+                run(`${q.number}.`) + run("\t") + run(`(${p.label})  ${p.text}  (${p.marks} marks)`),
+                { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 40 }
+              );
+            } else {
+              const isLast = idx === q.parts.length - 1;
+              questionsXml += para(
+                run(`(${p.label})  ${p.text}  (${p.marks} marks)`),
+                { indLeft: TAB_POS, spacingAfter: isLast ? 200 : 40 }
+              );
+            }
+          });
+        }
+      });
+    }
 
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">
@@ -227,6 +271,9 @@
       examPeriodLine: `${f.session} ${f.semester.toUpperCase()} SEMESTER EXAMINATIONS [${f.month}, ${f.year}]`,
       creditUnit: f.creditUnit,
       markObtainable: f.markObtainable,
-      questions: f.questions,
+      paperType: f.paperType || "Theory",
+      questions: (f.paperType === "Objective")
+        ? (f.objectiveQuestions || f.questions || [])
+        : (f.questions || []),
     };
   }

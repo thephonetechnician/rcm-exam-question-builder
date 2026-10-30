@@ -162,90 +162,93 @@ function blobToBase64(blob) {
 // Save generated exam to Google Drive + Google Sheets
 // ============================================================
 
-async function persistSubmission(
-  record,
-  blob,
-  filename
-) {
+// ------------------------------------------------------------
+// Secure Apps Script POST bridge.
+// The PIN travels in the POST body, never in the URL.
+// ------------------------------------------------------------
 
-  const fileBase64 =
-    await blobToBase64(blob);
+function postSecureAction(payload) {
+  return new Promise((resolve, reject) => {
+    const requestId = "rcm_req_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+    const iframeName = "rcm_frame_" + requestId.replace(/[^a-zA-Z0-9_]/g, "");
+    const iframe = document.createElement("iframe");
+    iframe.name = iframeName;
+    iframe.style.display = "none";
 
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = GOOGLE_DRIVE_WEB_APP_URL;
+    form.target = iframeName;
+    form.style.display = "none";
 
-  const payload =
-    JSON.stringify({
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "payload";
+    input.value = JSON.stringify({ ...payload, requestId });
+    form.appendChild(input);
 
-      action: "save",
+    let finished = false;
+    const cleanup = () => {
+      window.removeEventListener("message", onMessage);
+      if (form.parentNode) form.parentNode.removeChild(form);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    };
+    const finish = (fn, value) => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      cleanup();
+      fn(value);
+    };
+    const onMessage = (event) => {
+      if (!/googleusercontent\.com$|script\.google\.com$/.test(String(event.origin || "").replace(/^https?:\/\//, ""))) return;
+      const message = event.data;
+      if (!message || message.type !== "RCM_SECURE_RESPONSE" || message.requestId !== requestId) return;
+      const data = message.data || {};
+      if (data.success) finish(resolve, data);
+      else finish(reject, new Error(data.error || "The server rejected the request."));
+    };
 
-      filename,
+    const timer = setTimeout(() => {
+      finish(reject, new Error("The secure request timed out. Please try again."));
+    }, 30000);
 
-      fileBase64,
+    window.addEventListener("message", onMessage);
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+    form.submit();
+  });
+}
 
-      record
+// ------------------------------------------------------------
+// Save generated paper to Drive + Sheets (PIN hash made server-side)
+// ------------------------------------------------------------
 
-    });
+async function persistSubmission(record, blob, filename, pin) {
+  const fileBase64 = await blobToBase64(blob);
+  return postSecureAction({
+    action: "save",
+    filename,
+    fileBase64,
+    record,
+    pin
+  });
+}
 
+// ------------------------------------------------------------
+// Retrieve paper only after server-side PIN verification
+// ------------------------------------------------------------
 
-  await fetch(
-    GOOGLE_DRIVE_WEB_APP_URL,
-    {
+async function getSavedPaper(id, pin) {
+  return postSecureAction({ action: "get", id, pin });
+}
 
-      method: "POST",
+// ------------------------------------------------------------
+// Delete paper only after server-side PIN verification
+// ------------------------------------------------------------
 
-      mode: "no-cors",
-
-      headers: {
-        "Content-Type":
-          "text/plain;charset=utf-8"
-      },
-
-      body: payload
-
-    }
-  );
-};
-
-
-// ============================================================
-// Delete submission
-// ============================================================
-
-async function deleteSubmission(id) {
-
-  try {
-
-    await fetch(
-      GOOGLE_DRIVE_WEB_APP_URL,
-      {
-
-        method: "POST",
-
-        mode: "no-cors",
-
-        headers: {
-          "Content-Type":
-            "text/plain;charset=utf-8"
-        },
-
-        body: JSON.stringify({
-          action: "delete",
-          id
-        })
-
-      }
-    );
-
-
-    await loadSaved();
-
-  } catch (e) {
-
-    state.statusType = "err";
-
-    state.statusMsg =
-      "Could not delete the submission: " +
-      e.message;
-
-    render();
-  }
+async function deleteSubmission(id, pin) {
+  const result = await postSecureAction({ action: "delete", id, pin });
+  await loadSaved();
+  return result;
 }

@@ -16,7 +16,7 @@ const LOGO_CREST_B64 = "iVBORw0KGgoAAAANSUhEUgAAAKcAAACnCAYAAAB0FkzsAAAAAXNSR0IA
 
   function defaultSession() {
     const d = new Date();
-    const y = d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1; // academic year starts ~Sept
+    const y = d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1;
     return `${y}/${y + 1}`;
   }
 
@@ -29,11 +29,24 @@ const LOGO_CREST_B64 = "iVBORw0KGgoAAAANSUhEUgAAAKcAAACnCAYAAAB0FkzsAAAAAXNSR0IA
     };
   }
 
+  function makeObjectiveQuestion(number, optionCount) {
+    return {
+      number,
+      text: "",
+      options: Array.from({ length: optionCount }, (_, i) => ({
+        label: String.fromCharCode(65 + i),
+        text: ""
+      }))
+    };
+  }
+
   function makeForm() {
     const my = nowMonthYear();
     const creditUnit = 3;
     const rule = RULES[creditUnit];
     return {
+      paperType: "Theory",
+      pin: "",
       lecturerName: "",
       courseCode: "",
       courseTitle: "",
@@ -47,5 +60,10 @@ const LOGO_CREST_B64 = "iVBORw0KGgoAAAANSUhEUgAAAKcAAACnCAYAAAB0FkzsAAAAAXNSR0IA
       instruction: `Answer Question 1 & ${rule.answerWord} others`,
       instructionTouched: false,
       questions: Array.from({ length: rule.numQuestions }, (_, i) => makeEmptyQuestion(i + 1, rule.marksPerQuestion)),
+      objectiveQuestionCount: 1,
+      objectiveOptionCount: 4,
+      objectiveQuestions: [makeObjectiveQuestion(1, 4)],
+      objectivePasteText: "",
+      objectivePasteMessage: ""
     };
   }
