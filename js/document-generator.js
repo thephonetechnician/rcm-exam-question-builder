@@ -159,19 +159,6 @@
           );
         });
       });
-    } else if (data.paperType === "Sectioned") {
-      (data.sections || []).forEach((section, si) => {
-        const sectionName = section.type === "German" ? "GERMAN (FILL IN THE GAP)" : section.type.toUpperCase();
-        questionsXml += para(run(`SECTION ${String.fromCharCode(65 + si)} — ${sectionName}`, { bold: true, sz: 26 }), { spacingBefore: 160, spacingAfter: 100, keepNext: true });
-        if (section.instruction) questionsXml += para(run(section.instruction, { bold: true, italic: true }), { spacingAfter: 100, keepNext: true });
-        (section.questions || []).forEach((q, qi) => {
-          questionsXml += para(run(`${qi + 1}.`) + run("\t") + runMultiline(q.text), { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 40, keepNext: section.type === "Objective", keepLines: true });
-          if (section.type === "Objective") (q.options || []).forEach((op, oi) => questionsXml += para(run(`${op.label}.`) + run("\t") + runMultiline(op.text), { indLeft: 900, hanging: 450, tabs: [{ val: "left", pos: 1350 }], spacingAfter: oi === q.options.length - 1 ? 180 : 20, keepNext: oi < q.options.length - 1, keepLines: true }));
-          else questionsXml += para("", { spacingAfter: 160, keepLines: true });
-        });
-      });
-    } else if (data.paperType === "German") {
-      (data.questions || []).forEach((q) => questionsXml += para(run(`${q.number}.`) + run("\t") + runMultiline(q.text), { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 180, keepLines: true }));
     } else {
       // Existing Theory question layout — intentionally retained unchanged.
       data.questions.forEach((q) => {
@@ -285,7 +272,8 @@
       creditUnit: f.creditUnit,
       markObtainable: f.markObtainable,
       paperType: f.paperType || "Theory",
-      questions: f.paperType === "Objective" ? (f.objectiveQuestions || f.questions || []) : f.paperType === "German" ? (f.germanQuestions || f.questions || []) : (f.questions || []),
-      sections: f.sections || (f.questions && Array.isArray(f.questions.sections) ? f.questions.sections : []),
+      questions: (f.paperType === "Objective")
+        ? (f.objectiveQuestions || f.questions || [])
+        : (f.questions || []),
     };
   }
