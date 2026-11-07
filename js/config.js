@@ -64,6 +64,9 @@ const LOGO_CREST_B64 = "iVBORw0KGgoAAAANSUhEUgAAAKcAAACnCAYAAAB0FkzsAAAAAXNSR0IA
       objectiveOptionCount: 4,
       objectiveQuestions: [makeObjectiveQuestion(1, 4)],
       objectivePasteText: "",
-      objectivePasteMessage: ""
+      objectivePasteMessage: "",
+      sections: [],
+      germanQuestionCount: 5,
+      germanQuestions: Array.from({ length: 5 }, (_, i) => ({ number: i + 1, text: "" }))
     };
   }
