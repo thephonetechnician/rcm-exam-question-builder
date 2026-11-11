@@ -463,3 +463,93 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* RCM UI refresh — Stage 1: institutional header and refined layout */
+#run-exam-app {
+  --navy: #1b2a4a;
+  --navy-soft: #2e4066;
+  --maroon: #8c1d2b;
+  --maroon-dark: #6e1520;
+  --paper: #f4efe6;
+  --card: #ffffff;
+  --card-soft: #fffdf9;
+  --line: #d9d0c0;
+  --ink: #23262b;
+  --ink-soft: #5f6875;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(140,29,43,.07), transparent 25%),
+    linear-gradient(180deg, #f8f5ef 0%, #f0eadf 100%);
+  padding: 30px 20px 64px;
+}
+#run-exam-app .rea-shell { max-width: 1100px; }
+#run-exam-app .rea-letterhead {
+  border-top: 5px solid var(--maroon);
+  border-radius: 18px;
+  padding: 24px 30px 0;
+  box-shadow: 0 10px 30px rgba(27,42,74,.08);
+}
+#run-exam-app .rea-brand {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 112px;
+  padding-bottom: 20px;
+}
+#run-exam-app .rea-logo {
+  display: block;
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  flex: 0 0 92px;
+  border-radius: 12px;
+  background: #fff;
+}
+#run-exam-app .rea-brand-copy { min-width: 0; }
+#run-exam-app .rea-institution {
+  margin: 0 0 5px;
+  color: var(--maroon);
+  font-size: .72rem;
+  line-height: 1.3;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+#run-exam-app .rea-title {
+  margin: 0 0 6px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.45rem, 2.6vw, 2.15rem);
+  line-height: 1.18;
+  letter-spacing: .025em;
+}
+#run-exam-app .rea-subtitle {
+  margin: 0;
+  max-width: 680px;
+  font-size: .94rem;
+  line-height: 1.55;
+}
+#run-exam-app .rea-tabs {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+#run-exam-app .rea-tab {
+  padding: 12px 18px;
+  border-radius: 10px 10px 0 0;
+  font-size: .92rem;
+}
+#run-exam-app .rea-panel {
+  border: 1px solid rgba(217,208,192,.65);
+  border-radius: 16px;
+  box-shadow: 0 10px 26px rgba(27,42,74,.055);
+  padding: 28px 32px 32px;
+}
+@media (max-width: 640px) {
+  #run-exam-app { padding: 16px 10px 40px; }
+  #run-exam-app .rea-letterhead { padding: 18px 18px 0; border-radius: 14px; }
+  #run-exam-app .rea-brand { align-items: flex-start; gap: 13px; min-height: 0; padding-bottom: 16px; }
+  #run-exam-app .rea-logo { width: 66px; height: 66px; flex-basis: 66px; }
+  #run-exam-app .rea-institution { font-size: .61rem; letter-spacing: .08em; }
+  #run-exam-app .rea-title { font-size: 1.25rem; }
+  #run-exam-app .rea-subtitle { font-size: .82rem; }
+  #run-exam-app .rea-tab { padding: 10px 12px; font-size: .84rem; }
+  #run-exam-app .rea-panel { padding: 20px 16px 24px; border-radius: 13px; }
+}

@@ -3,23 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1b2a4a">
   <title>RCM EXAM QUESTION BUILDER</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 <div id="run-exam-app">
   <div class="rea-shell">
-    <div class="rea-letterhead">
-      <h1 class="rea-title">RCM EXAM QUESTION BUILDER</h1>
-      <p class="rea-subtitle">Fill in a question set and download it as a ready-to-use Word document in the standard format.</p>
-      <div class="rea-tabs">
-        <button class="rea-tab active" data-tab="new">New submission</button>
-        <button class="rea-tab" data-tab="saved">Saved submissions</button>
+    <header class="rea-letterhead">
+      <div class="rea-brand">
+        <img class="rea-logo" src="assets/rcm-logo.jpg" alt="Redeemed College of Missions logo">
+        <div class="rea-brand-copy">
+          <p class="rea-institution">REDEEMED COLLEGE OF MISSIONS</p>
+          <h1 class="rea-title">RCM EXAM QUESTION BUILDER</h1>
+          <p class="rea-subtitle">Prepare examination papers and download them in the approved Word format.</p>
+        </div>
       </div>
-    </div>
+      <nav class="rea-tabs" aria-label="Main navigation">
+        <button class="rea-tab active" type="button" data-tab="new">New submission</button>
+        <button class="rea-tab" type="button" data-tab="saved">Saved submissions</button>
+      </nav>
+    </header>
 
-    <div class="rea-panel" id="rea-panel-new"></div>
-    <div class="rea-panel" id="rea-panel-saved" style="display:none;"></div>
+    <main>
+      <div class="rea-panel" id="rea-panel-new"></div>
+      <div class="rea-panel" id="rea-panel-saved" style="display:none;"></div>
+    </main>
   </div>
 </div>
 
