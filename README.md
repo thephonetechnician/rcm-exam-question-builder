@@ -1,9 +1,33 @@
-# RCM EXAM QUESTION BUILDER
+# RCM Academic Portal
+
+The dashboard entry point is `index.html`. The existing Question Builder
+is preserved at `exam-builder.html`, using its original scripts, styles
+and Apps Script endpoint. The embedded HTML fragment remains unchanged.
+
+The dashboard now includes responsive workspace navigation, a lecturer sign-in
+dialog, assigned-course cards and a direct saved-paper shortcut. Lecturer access
+is implemented for staging but disabled until its endpoint is configured in
+`js/portal-config.js`. See [staging installation](apps-script/portal/README.md).
+Result Submission and Academic Administration are not connected yet.
+
+Run `node tests/portal-auth.test.mjs` to check the read-only authentication service
+against synthetic Apps Script services. Real deployment testing is still required.
+
+Before deployment, serve this directory locally and check the dashboard at
+desktop and mobile widths. Open the builder, switch its tabs, generate a
+sample Word document and return using Portal home. Verify backend operations
+only with a designated test paper. Existing backend data stores stay separate.
 
 Modularized version of the latest working HTML.
 
 ## Structure
-- `index.html` — page structure and script loading
+- `index.html` — portal dashboard
+- `css/portal.css` — separate dashboard styles
+- `css/builder-portal.css` — builder navigation and page margins
+- `js/portal.js` — lecturer sign-in, course rendering and POST transport
+- `js/portal-config.js` — public staging endpoint configuration (initially empty)
+- `apps-script/portal/` — read-only lecturer service and staging instructions
+- `exam-builder.html` — builder page structure and script loading
 - `css/styles.css` — current interface styling
 - `css/print.css` — reserved for future print-specific styling
 - `js/config.js` — constants, form defaults, application state

@@ -6,5 +6,11 @@ document.querySelectorAll(".rea-tab").forEach((t) => {
     });
   });
 
-  render();
+  // A dashboard shortcut can open saved submissions directly.
+  if (window.location.hash === '#saved') {
+    state.tab = 'saved';
+    loadSaved();
+  } else {
+    render();
+  }
 

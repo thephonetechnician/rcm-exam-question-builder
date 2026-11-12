@@ -1,44 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1b2a4a">
-  <title>RCM EXAM QUESTION BUILDER</title>
-  <link rel="stylesheet" href="css/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1b2a4a">
+<meta name="description" content="Redeemed College of Missions academic workspace for examination papers and results.">
+<title>RCM Academic Portal</title>
+<link rel="stylesheet" href="css/portal.css">
+<script src="js/portal-config.js" defer></script>
+<script src="js/portal.js" defer></script>
 </head>
 <body>
-<div id="run-exam-app">
-  <div class="rea-shell">
-    <header class="rea-letterhead">
-      <div class="rea-brand">
-        <img class="rea-logo" src="assets/rcm-logo.jpg" alt="Redeemed College of Missions logo">
-        <div class="rea-brand-copy">
-          <p class="rea-institution">REDEEMED COLLEGE OF MISSIONS</p>
-          <h1 class="rea-title">RCM EXAM QUESTION BUILDER</h1>
-          <p class="rea-subtitle">Prepare examination papers and download them in the approved Word format.</p>
-        </div>
-      </div>
-      <nav class="rea-tabs" aria-label="Main navigation">
-        <button class="rea-tab active" type="button" data-tab="new">New submission</button>
-        <button class="rea-tab" type="button" data-tab="saved">Saved submissions</button>
-      </nav>
-    </header>
-
-    <main>
-      <div class="rea-panel" id="rea-panel-new"></div>
-      <div class="rea-panel" id="rea-panel-saved" style="display:none;"></div>
-    </main>
-  </div>
-</div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/google-drive.js"></script>
-  <script src="js/exam-builder.js"></script>
-  <script src="js/document-generator.js"></script>
-  <script src="js/validation.js"></script>
-  <script src="js/ui.js"></script>
-  <script src="js/app.js"></script>
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="workspace">
+<aside class="sidebar">
+<a class="brand" href="index.html"><img src="assets/rcm-logo.jpg" alt="" width="56" height="56"><span><span class="institution">Redeemed College<br>of Missions</span><span class="portal-name">Academic Portal</span></span></a>
+<p class="nav-label">WORKSPACE</p>
+<nav class="side-nav" aria-label="Portal navigation"><a class="selected" href="index.html" aria-current="page"><span aria-hidden="true">▦</span> Overview</a><a href="exam-builder.html"><span aria-hidden="true">▤</span> Question Builder</a><a href="#courses"><span aria-hidden="true">▧</span> My courses</a><a href="#help"><span aria-hidden="true">?</span> Help & guidance</a></nav>
+<div class="sidebar-note"><span class="status-dot"></span> First release in progress<p>Your existing Question Builder remains available.</p></div>
+</aside>
+<div class="content">
+<header class="topbar"><p>Academic workspace <span>/ Overview</span></p><button class="button secondary" id="open-login" type="button">Lecturer sign in</button><button class="button secondary" id="logout" type="button" hidden>Sign out</button></header>
+<main id="main">
+<section class="page-intro"><div><p class="eyebrow">YOUR ACADEMIC WORKSPACE</p><h1 id="welcome-title">Welcome to your portal.</h1><p id="welcome-copy">Prepare your papers. Manage your courses. Keep your academic work moving.</p></div><span class="term-label" id="session-label">RCM Academic Portal</span></section>
+<div id="portal-status" class="notice" role="status" aria-live="polite" hidden></div>
+<section class="hero" aria-labelledby="hero-title"><div><span class="hero-label">EXAMINATION TOOLS</span><h2 id="hero-title">A well-prepared paper<br>starts here.</h2><p>Create examination questions and download a paper in the college’s approved Word format.</p><a class="button light" href="exam-builder.html">Create an exam paper <span aria-hidden="true">→</span></a></div><div class="paper-preview" aria-hidden="true"><span class="paper-seal">RCM</span><span class="paper-caption">EXAMINATION PAPER</span><span class="paper-rule wide"></span><span class="paper-rule"></span><span class="paper-rule short"></span><span class="paper-question">01 <i></i></span><span class="paper-question">02 <i></i></span><span class="paper-question">03 <i></i></span><span class="paper-footer">REDEEMED COLLEGE OF MISSIONS</span></div></section>
+<section aria-labelledby="tools-title"><div class="section-heading"><div><h2 id="tools-title">Your academic tools</h2><p>Everything you need, organised around your work.</p></div></div>
+<div class="grid">
+<article class="card"><div class="card-top"><span class="tool-icon" aria-hidden="true">▤</span><span class="badge ready">Available</span></div><h3>Question Builder</h3><p>Write questions, set marks and generate examination papers.</p><a class="text-link" href="exam-builder.html">Open builder <span aria-hidden="true">→</span></a></article>
+<article class="card"><div class="card-top"><span class="tool-icon amber" aria-hidden="true">▧</span><span class="badge">Being connected</span></div><h3>Result Submission</h3><p>Enter student scores and submit results for your assigned courses.</p><p class="availability">Score entry will be available after integration.</p></article>
+<article class="card"><div class="card-top"><span class="tool-icon purple" aria-hidden="true">✓</span><span class="badge">Coming soon</span></div><h3>Paper review & tracking</h3><p>Follow paper approvals and see where your submissions stand.</p><p class="availability">Review and tracking are in development.</p></article>
+</div></section>
+<section class="courses-section" id="courses" aria-labelledby="courses-title"><div class="section-heading"><div><h2 id="courses-title">My assigned courses</h2><p id="courses-description">Your courses will appear here after you sign in.</p></div></div><div class="empty-state" id="course-empty"><span class="empty-icon" aria-hidden="true">▦</span><h3>Your courses, in one place</h3><p>Sign in with your lecturer email and access code to view your assignments.</p><button class="button secondary" id="courses-login" type="button">Sign in to view courses</button></div><div class="course-grid" id="course-list" hidden></div></section>
+<section class="guidance" id="help" aria-labelledby="help-title"><div><p class="eyebrow">NEED A HAND?</p><h2 id="help-title">Pick up where you left off.</h2><p>To reopen a paper, choose <strong>Saved submissions</strong> in the Question Builder. Keep your paper PIN ready.</p></div><a class="text-link" href="exam-builder.html#saved">Find a saved paper <span aria-hidden="true">→</span></a></section>
+</main><footer><span>Redeemed College of Missions</span><span>Academic Portal · First release</span></footer>
+</div></div>
+<dialog id="login-dialog" aria-labelledby="login-title"><div class="dialog-top"><span class="eyebrow">LECTURER ACCESS</span><button id="close-login" class="close-button" type="button" aria-label="Close sign in">×</button></div><h2 id="login-title">Welcome back.</h2><p>Use the email and access code provided by the academic office.</p><form id="login-form"><label for="lecturer-email">Email address</label><input id="lecturer-email" name="email" type="email" autocomplete="username" required maxlength="254" placeholder="you@example.com"><label for="lecturer-code">Access code</label><input id="lecturer-code" name="code" type="password" autocomplete="current-password" required maxlength="128"><p class="form-message" id="login-message" role="status" aria-live="polite"></p><button class="button primary" id="login-submit" type="submit">Sign in</button></form><p class="login-help">Your paper PIN is separate from your lecturer access code.</p></dialog>
 </body>
 </html>
