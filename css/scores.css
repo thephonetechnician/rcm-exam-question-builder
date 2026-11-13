@@ -29,9 +29,13 @@
 .score-warning { background: #fff7e8; padding: 15px 18px; color: #77521e; font-size: 12px; border-radius: 8px; margin: 22px 0; }
 .score-success { border-left: 3px solid #2d7652; padding: 15px 18px; background: #eff8f3; font-size: 13px; }
 .score-success p { margin: 7px 0 0; }
-.download-row { display: flex; gap: 12px; max-width: 600px; align-items: stretch; }
-.download-row input { min-width: 0; flex: 1; }
-.download-row button { flex-shrink: 0; }
+.download-row { display: grid; gap: 14px; max-width: 600px; }
+.pin-input-wrap { display: flex; align-items: stretch; gap: 10px; min-width: 0; }
+.pin-input-wrap input { flex: 1 1 0%; min-width: 0; width: 100%; min-height: 54px; font-size: 18px; color: #1b2a4a; background: #fff; caret-color: #8c1d2b; }
+.pin-input-wrap .button { flex: 0 0 auto; width: auto; min-width: 88px; }
+.download-row > .button { width: auto; justify-self: start; min-height: 46px; }
+.download-feedback { padding: 12px 15px; border-left: 3px solid var(--maroon); background: #fff4f3; color: #8c1d2b; font-size: 13px; }
+.download-feedback.success { background: #eff8f3; color: #246444; border-color: #2d7652; }
 .download-actions { margin-top: 20px; }
 .download-actions button { margin: 0 8px 8px 0; }
 .dialog-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 22px; }

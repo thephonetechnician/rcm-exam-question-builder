@@ -4,6 +4,13 @@
   let courses = [], current, snapshot, pending, dirty = false, submitting = false, seq = 0;
   const fields = new Map();
   const tell = text => { $('score-message').textContent = text; $('score-message').hidden = !text; };
+  function downloadFeedback(text, success=false) {
+    $('download-feedback').textContent=text; $('download-feedback').hidden=!text;
+    $('download-feedback').classList.toggle('success',success);
+  }
+  function hidePin() {
+    $('download-pin').type='password';$('toggle-download-pin').textContent='Show PIN';$('toggle-download-pin').setAttribute('aria-pressed','false');
+  }
   const meta = c => `${c.programme} · ${c.level} · ${c.session} · Semester ${c.semester} · ${c.units} units`;
   async function busy(button, label, fn) {
     const original = button.textContent; button.disabled = true; button.textContent = label;
@@ -72,6 +79,7 @@
       $('course-state').textContent=data.locked?'Submitted · Locked':'Ready for score entry';
       $('score-entry-form').hidden=data.locked; $('locked-course').hidden=!data.locked; $('download-actions').hidden=true; $('download-form').hidden=false; $('download-form').reset();
       $('locked-detail').textContent='Use the submission PIN to retrieve the submitted score sheet.';
+      hidePin();downloadFeedback('');
       if (!data.locked) showEntry();
       tell(!data.locked && !data.config.open ? 'Score submission is currently closed.' : ''); choices();
       $('selected-course').scrollIntoView({behavior:'smooth',block:'start'});
@@ -104,16 +112,29 @@
     finally {submitting=false;$('cancel-submit').disabled=false;}
   }));
   $('confirm-dialog').addEventListener('cancel',event=>{if(submitting)event.preventDefault();});
+  $('toggle-download-pin').addEventListener('click',()=>{
+    const show=$('download-pin').type==='password';
+    $('download-pin').type=show?'text':'password';$('toggle-download-pin').textContent=show?'Hide PIN':'Show PIN';$('toggle-download-pin').setAttribute('aria-pressed',String(show));$('download-pin').focus();
+  });
+  $('download-pin').addEventListener('input',()=>{downloadFeedback('');tell('');});
   $('download-form').addEventListener('submit',event=>{event.preventDefault();busy($('unlock-download'),'Checking PIN…',async()=>{
     const ref=current.course.ref,ticket=seq;
-    const data=await window.ScoreAPI.request({action:'score.download',courseRef:ref,pin:$('download-pin').value});
-    if(ticket!==seq||current.course.ref!==ref)return;
-    snapshot=data.snapshot;
-    $('download-pin').value=''; $('download-form').hidden=true; $('download-actions').hidden=false;
-    $('download-details').textContent=`Version ${snapshot.version} · ${snapshot.students.length} students · Lecturer: ${snapshot.lecturerName} · Exam: ${snapshot.examDate}`;tell('PIN verified. Choose Excel or PDF below.');
+    downloadFeedback('Checking your submission PIN…');
+    try {
+      const data=await window.ScoreAPI.request({action:'score.download',courseRef:ref,pin:$('download-pin').value});
+      if(ticket!==seq||current.course.ref!==ref)return;
+      snapshot=data.snapshot;
+      $('download-pin').value='';hidePin(); $('download-form').hidden=true; $('download-actions').hidden=false;
+      $('download-details').textContent=`Version ${snapshot.version} · ${snapshot.students.length} students · Lecturer: ${snapshot.lecturerName} · Exam: ${snapshot.examDate}`;
+      downloadFeedback('PIN verified. Choose Download Excel or Download PDF below.',true);tell('PIN verified. Choose Excel or PDF below.');
+      $('download-actions').scrollIntoView({behavior:'smooth',block:'nearest'});
+    } catch(error) {
+      if(ticket===seq){downloadFeedback(error.message);$('download-pin').focus();}
+      throw error;
+    }
   });});
   for(const [id,kind] of [['download-excel','excel'],['download-pdf','pdf']]) $(id).addEventListener('click',()=>busy($(id),'Preparing…',()=>window.ScoreExports[kind](snapshot)));
-  $('clear-download').addEventListener('click',()=>{snapshot=null;$('download-actions').hidden=true;$('download-form').hidden=false;tell('Downloads closed. Enter the PIN again to retrieve them.');});
+  $('clear-download').addEventListener('click',()=>{snapshot=null;$('download-actions').hidden=true;$('download-form').hidden=false;hidePin();downloadFeedback('');$('download-pin').focus();tell('Downloads closed. Enter the PIN again to retrieve them.');});
   window.addEventListener('beforeunload',event=>{if(dirty||submitting){event.preventDefault();event.returnValue='';}});
   catalogue().catch(error=>{$('catalogue-status').textContent='Courses could not be loaded.';tell(error.message+' The staging score service may still need installation.');});
 })();

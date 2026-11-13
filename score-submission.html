@@ -43,7 +43,15 @@
       </form>
       <div id="locked-course" hidden>
         <div class="score-success"><strong>This course is submitted and locked.</strong><p id="locked-detail">Use the submission PIN to retrieve the submitted score sheet.</p></div>
-        <form id="download-form"><label for="download-pin">Submission PIN</label><div class="download-row"><input id="download-pin" type="password" minlength="8" maxlength="128" autocomplete="off" required><button class="button primary" id="unlock-download" type="submit">Unlock downloads</button></div></form>
+        <form id="download-form">
+          <label for="download-pin">Submission PIN</label>
+          <p class="muted" id="download-pin-help">Enter the same PIN you created when submitting this course. Use Show PIN to check what you typed.</p>
+          <div class="download-row">
+            <div class="pin-input-wrap"><input id="download-pin" type="password" minlength="8" maxlength="128" autocomplete="off" placeholder="Enter your submission PIN" aria-describedby="download-pin-help download-feedback" required><button class="button secondary" id="toggle-download-pin" type="button" aria-controls="download-pin" aria-pressed="false">Show PIN</button></div>
+            <button class="button primary" id="unlock-download" type="submit">Unlock downloads</button>
+          </div>
+        </form>
+        <p id="download-feedback" class="download-feedback" role="status" aria-live="polite" hidden></p>
         <div id="download-actions" class="download-actions" hidden><p id="download-details" class="muted"></p><button class="button secondary" id="download-excel" type="button">Download Excel</button><button class="button secondary" id="download-pdf" type="button">Download PDF</button><button class="button secondary" id="clear-download" type="button">Close downloads</button></div>
       </div>
     </section>
