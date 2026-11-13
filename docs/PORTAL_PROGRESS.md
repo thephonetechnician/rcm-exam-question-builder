@@ -1,5 +1,23 @@
 # Portal checkpoint — 13 November 2026
 
+## Current priority: PIN-based score MVP
+
+Lecturer login / assigned-course work is deferred for the presentation release.
+The local implementation now includes `score-submission.html`, `score-admin.html`,
+the `09_ScoreService.gs` and `10_ScoreSetup.gs` modules, PIN-verified Excel/PDF
+exports, an append-only archive/reopen workflow, and template import/demo setup.
+Follow `SCORE_MVP_STAGING.md` for installation. No live score deployment has been
+updated by the agent, and these changes are not committed or pushed yet.
+
+Synthetic backend tests and a browser rehearsal verified course selection, roster
+entry, final submission, PIN verification, admin archive and reopened entry.
+Export tests generated a seven-page 120-student PDF, checked accented names and
+the last student, and checked XLSX structure/text identifiers/formula safety.
+Real Apps Script transport, permissions and score writes still need staging tests.
+The original exam-generation and storage scripts were not changed in this stage.
+
+## Earlier portal foundation checkpoint
+
 Branch: `rcm-academic-portal`. Changes remain local and uncommitted.
 
 Completed: central dashboard with responsive sidebar/mobile navigation,

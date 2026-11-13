@@ -76,7 +76,7 @@ function portalRoute_(data) {
 }
 function portalResponse_(data, requestId) {
   const origin = PropertiesService.getScriptProperties().getProperty('PORTAL_FRONTEND_ORIGIN') || '';
-  if (!/^https:\/\/[a-z0-9.-]+(?::[0-9]+)?$/i.test(origin) && !/^http:\/\/localhost:[0-9]+$/.test(origin)) throw new Error('Configure PORTAL_FRONTEND_ORIGIN before enabling lecturer sign-in.');
+  if (!/^https:\/\/[a-z0-9.-]+(?::[0-9]+)?$/i.test(origin) && !/^http:\/\/(localhost|127\.0\.0\.1):[0-9]+$/.test(origin)) throw new Error('Configure PORTAL_FRONTEND_ORIGIN before enabling lecturer sign-in.');
   let result;
   try { result = portalRoute_(data); }
   catch (error) { result = { success: false, error: error.message || 'Lecturer access is unavailable.' }; }
