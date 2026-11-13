@@ -55,5 +55,18 @@ small { color: var(--muted); font-size: 11px; }
 .admin-submission p { font-size: 12px; color: var(--muted); margin: 6px 0; }
 .admin-submission button { margin: 12px 8px 0 0; }
 textarea { font: inherit; width: 100%; border: 1px solid #ced6e2; border-radius: 7px; padding: 12px; min-height: 90px; }
+select { width: 100%; font: inherit; padding: 12px; min-height: 46px; border: 1px solid #ced6e2; border-radius: 7px; background: white; color: var(--ink); }
+.class-context-fields { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.class-create { padding: 16px 0; border-bottom: 1px solid var(--line); margin: 14px 0; }
+.class-create summary { cursor: pointer; color: var(--maroon); font-size: 13px; font-weight: 700; padding: 8px 0; }
+.class-mode-tabs { display: flex; gap: 10px; margin: 18px 0; flex-wrap: wrap; }
+.class-mode-tabs [aria-pressed="true"] { background: var(--navy); color: white; border-color: var(--navy); }
+.class-context-label { padding: 14px 18px; background: #eef2f8; border-radius: 8px; font-weight: 700; }
+#class-semester-field { max-width: 280px; }
+.import-conflict { color: #a12638; background: #fff0ee!important; }
+.lecturer-added { display: block; color: #8c1d2b; font-size: 10px; }
+.remove-added { display: inline-block; width: auto; border: 0; background: none; color: #8c1d2b; font-size: 11px; cursor: pointer; padding: 5px 0; text-decoration: underline; }
+.score-roster-heading .button { width: auto; }
+@media(max-width:700px) { .class-context-fields { grid-template-columns: 1fr; gap: 0; } }
 @media(max-width:700px) { .score-header { padding: 18px; } .score-header .brand { gap: 8px; } .score-header .institution { font-size: 8px; } .score-header .portal-name { font-size: 16px; } .score-header .text-link { font-size: 11px; } .score-main { padding: 25px 16px 35px; } .score-panel { padding: 20px 16px; } .score-fields { grid-template-columns: 1fr; gap: 0; } .score-steps { flex-direction: column; gap: 6px; } .section-heading { flex-wrap: wrap; } .download-row { flex-direction: column; } .score-roster-heading { flex-wrap: wrap; gap: 8px; } }
 @media(max-width:700px) { .score-mobile-hint { display: block; } }

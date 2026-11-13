@@ -25,7 +25,7 @@ const context=vm.createContext({Date,JSON,Object,Number,String,Math,Array,Boolea
   CacheService:{getScriptCache:()=>({get:k=>cache.get(k)??null,put:(k,v)=>cache.set(k,v),remove:k=>cache.delete(k)})},
   HtmlService:{XFrameOptionsMode:{ALLOWALL:'allow'},createHtmlOutput:html=>({html,setXFrameOptionsMode(){return this;}})}
 });
-for(const name of ['09_ScoreService.gs','10_ScoreSetup.gs']) vm.runInContext(fs.readFileSync(new URL('../../apps-script/portal/'+name,import.meta.url),'utf8'),context);
+for(const name of ['09_ScoreService.gs','10_ScoreSetup.gs','11_ClassManagement.gs']) vm.runInContext(fs.readFileSync(new URL('../../apps-script/portal/'+name,import.meta.url),'utf8'),context);
 
 return {context,props,cache,sheets,book,books,controls:{get held(){return held;},set held(v){held=v;},get failTable(){return failTable;},set failTable(v){failTable=v;}}};
 }

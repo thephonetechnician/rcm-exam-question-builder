@@ -7,7 +7,10 @@ const SCORE_TABLES_ = {
   ScoreRegistrations: ['CourseRef','StudentRef','RegistrationType'],
   ScoreSubmissions: ['SubmissionID','CourseRef','Version','SubmittedAt','LecturerName','ExamDate','PinSalt','PinHash','CourseJSON','RecordCount','OperationID','PayloadHash'],
   ScoreEntries: ['SubmissionID','StudentRef','MatNo','Name','CA','Exam','Total','Grade'],
-  ScoreHistory: ['EventID','Timestamp','SubmissionID','CourseRef','Action','Actor','Reason']
+  ScoreHistory: ['EventID','Timestamp','SubmissionID','CourseRef','Action','Actor','Reason'],
+  ScoreClasses: ['ClassRef','Session','Programme','Level/Set'],
+  ScoreClassEnrolments: ['ClassRef','StudentRef'],
+  ScoreAdditions: ['SubmissionID','StudentRef','MatNo','Name','RegistrationType','Reason','AddedBy','AddedAt','ReviewStatus']
 };
 function scoreText_(v) { return String(v === null || v === undefined ? '' : v).trim(); }
 function scoreHash_(v) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(v), Utilities.Charset.UTF_8).map(function(b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join(''); }
@@ -61,9 +64,16 @@ function scoreCourse_(book,ref) {
   return c;
 }
 function scoreRoster_(book,ref) {
-  const students=scoreRead_(book,'ScoreStudents'),regs=scoreRead_(book,'ScoreRegistrations').filter(function(r){return scoreText_(r.CourseRef)===ref;}),seen={};
-  const roster=regs.map(function(r){
-    const id=scoreText_(r.StudentRef);if(!id||seen[id])throw new Error('Missing or duplicate student registration. Contact the administrator.');seen[id]=true;
+  const students=scoreRead_(book,'ScoreStudents'),regs=scoreRead_(book,'ScoreRegistrations').filter(function(r){return scoreText_(r.CourseRef)===ref;}),seen=Object.create(null);
+  const ids=[];
+  regs.forEach(function(r){const id=scoreText_(r.StudentRef);if(!id||seen[id])throw new Error('Missing or duplicate student registration. Contact the administrator.');seen[id]=true;ids.push(id);});
+  if(book.getSheetByName('ScoreClasses')&&book.getSheetByName('ScoreClassEnrolments')){
+    const course=scoreCourse_(book,ref),norm=function(v){return scoreText_(v).toLowerCase().replace(/\s+/g,' ');};
+    const classes=scoreRead_(book,'ScoreClasses').filter(function(c){return norm(c.Session)===norm(course.session)&&norm(c.Programme)===norm(course.programme)&&norm(c['Level/Set'])===norm(course.level);});
+    if(classes.length>1)throw new Error('Duplicate class records. Contact the administrator.');
+    if(classes[0])scoreRead_(book,'ScoreClassEnrolments').filter(function(e){return e.ClassRef===classes[0].ClassRef;}).forEach(function(e){const id=scoreText_(e.StudentRef);if(!seen[id]){seen[id]=true;ids.push(id);}});
+  }
+  const roster=ids.map(function(id){
     const found=students.filter(function(s){return scoreText_(s.StudentRef)===id;});
     if(found.length!==1) throw new Error('Student reference missing or duplicated: '+id);
     const s=found[0];if(scoreText_(s.Status)!=='Active')return null;
@@ -71,7 +81,6 @@ function scoreRoster_(book,ref) {
     return {ref:id,matNo:scoreText_(s.MatNo),name:scoreText_(s.Name)};
   }).filter(Boolean).sort(function(a,b){return a.ref.localeCompare(b.ref);});
   const matric={};roster.forEach(function(s){if(s.matNo&&matric[s.matNo])throw new Error('Duplicate matric number in this roster.');if(s.matNo)matric[s.matNo]=true;});
-  if(!roster.length)throw new Error('No active students are registered for this course yet.');
   if(roster.length>1000)throw new Error('This roster exceeds the first-release limit of 1,000 students.');
   return roster;
 }
@@ -95,7 +104,7 @@ function scoreLoad_(book,ref) {
 }
 function scoreSafePin_(pin) {if(typeof pin!=='string'||pin.length<8||pin.length>128||pin.trim()!==pin)throw new Error('Use a PIN of 8–128 characters without leading or trailing spaces.');return pin;}
 function scoreScore_(v,max,label) {if((typeof v!=='number'&&typeof v!=='string')||String(v).trim()===''||!Number.isFinite(Number(v))||Number(v)<0||Number(v)>max||Math.abs(Math.round(Number(v)*100)-Number(v)*100)>1e-8)throw new Error(label+' must be between 0 and '+max+' with at most two decimal places.');return Number(v);}
-function scorePayload_(data) {return scoreHash_(JSON.stringify({courseRef:data.courseRef,revision:data.revision,lecturerName:scoreText_(data.lecturerName),examDate:data.examDate,pinHash:scoreHash_(data.pin),entries:data.entries}));}
+function scorePayload_(data) {return scoreHash_(JSON.stringify({courseRef:data.courseRef,revision:data.revision,lecturerName:scoreText_(data.lecturerName),examDate:data.examDate,pinHash:scoreHash_(data.pin),entries:data.entries,additions:data.additions||[]}));}
 function scoreSubmit_(book,data) {
   return scoreLock_(function(){
     const ref=scoreText_(data.courseRef),op=scoreText_(data.operationId),pin=scoreSafePin_(data.pin);
@@ -107,8 +116,11 @@ function scoreSubmit_(book,data) {
     const cfg=scoreConfig_(book);if(!cfg.open)throw new Error('Score submission is currently closed.');
     const course=scoreCourse_(book,ref),latest=scoreLatest_(book,ref);
     if(latest&&!latest.archived)throw new Error('This course is already submitted and locked. Use your PIN to download it.');
-    const students=scoreRoster_(book,ref);
-    if(data.revision!==scoreRevision_(course,students,cfg))throw new Error('The course, roster or marking settings changed. Reload the course and review the scores.');
+    const registered=scoreRoster_(book,ref);
+    if(data.revision!==scoreRevision_(course,registered,cfg))throw new Error('The course, roster or marking settings changed. Reload the course and review the scores.');
+    const additions=scoreValidateAdditions_(book,data.additions||[],registered);
+    const students=registered.concat(additions);
+    if(!students.length||students.length>1000)throw new Error('Submit between 1 and 1,000 students.');
     const lecturer=scoreText_(data.lecturerName);if(lecturer.length<2||lecturer.length>150)throw new Error('Enter the lecturer’s full name (2–150 characters).');
     const date=scoreText_(data.examDate),parsed=new Date(date+'T12:00:00Z');
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||isNaN(parsed.getTime())||parsed.toISOString().slice(0,10)!==date||date>Utilities.formatDate(new Date(),'Africa/Lagos','yyyy-MM-dd'))throw new Error('Enter a valid examination date that is not in the future.');
@@ -118,6 +130,7 @@ function scoreSubmit_(book,data) {
     const entries=students.map(function(s){const e=byRef[s.ref];if(!e)throw new Error('Missing scores for '+s.ref);const ca=scoreScore_(e.ca,cfg.caMax,'CA for '+s.ref),exam=scoreScore_(e.exam,cfg.examMax,'Exam for '+s.ref),total=Math.round((ca+exam)*100)/100;const grade=cfg.grades.filter(function(g){return total>=g.min;})[0];return [id,s.ref,s.matNo,s.name,ca,exam,total,grade?grade.grade:''];});
     // Commit marker goes LAST. Entries without a submission header are never served.
     scoreAppend_(book,'ScoreEntries',entries);
+    if(additions.length)scoreAppend_(book,'ScoreAdditions',additions.map(function(s){return [id,s.ref,s.matNo,s.name,s.registrationType,s.reason,lecturer,new Date().toISOString(),'Lecturer added — admin review'];}));
     SpreadsheetApp.flush();
     scoreAppend_(book,'ScoreSubmissions',[[id,ref,version,new Date().toISOString(),lecturer,date,salt,scoreHash_(salt+'|'+pin),JSON.stringify(course),entries.length,op,payloadHash]]);
     SpreadsheetApp.flush();
@@ -137,7 +150,8 @@ function scoreAttempt_(scope,fn) {
 function scoreSnapshot_(book,record) {
   const rows=scoreRead_(book,'ScoreEntries').filter(function(e){return e.SubmissionID===record.SubmissionID;});
   if(rows.length!==Number(record.RecordCount))throw new Error('Submission record count does not match. Contact the administrator.');
-  return {submissionId:record.SubmissionID,version:Number(record.Version),submittedAt:record.SubmittedAt,lecturerName:record.LecturerName,examDate:record.ExamDate,course:JSON.parse(record.CourseJSON),students:rows.map(function(r){return {ref:r.StudentRef,matNo:r.MatNo,name:r.Name,ca:Number(r.CA),exam:Number(r.Exam),total:Number(r.Total),grade:r.Grade};})};
+  const additions=book.getSheetByName('ScoreAdditions')?scoreRead_(book,'ScoreAdditions').filter(function(a){return a.SubmissionID===record.SubmissionID;}):[];
+  return {submissionId:record.SubmissionID,version:Number(record.Version),submittedAt:record.SubmittedAt,lecturerName:record.LecturerName,examDate:record.ExamDate,course:JSON.parse(record.CourseJSON),students:rows.map(function(r){const a=additions.filter(function(x){return x.StudentRef===r.StudentRef;})[0];return {ref:r.StudentRef,matNo:r.MatNo,name:r.Name,ca:Number(r.CA),exam:Number(r.Exam),total:Number(r.Total),grade:r.Grade,source:a?'Lecturer added':'Registered roster',registrationType:a?a.RegistrationType:'',reason:a?a.Reason:'',addedBy:a?a.AddedBy:'',addedAt:a?a.AddedAt:'',reviewStatus:a?a.ReviewStatus:''};})};
 }
 function scoreDownload_(book,data) {
   const ref=scoreText_(data.courseRef);
@@ -168,8 +182,8 @@ function scoreAdminLogin_(data) {
   });
 }
 function scoreHistory_(book) {
-  const events=scoreRead_(book,'ScoreHistory'),archived={};events.forEach(function(e){if(e.Action==='Archived')archived[e.SubmissionID]=e;});
-  return scoreRead_(book,'ScoreSubmissions').map(function(r){const c=JSON.parse(r.CourseJSON);return {submissionId:r.SubmissionID,courseRef:r.CourseRef,course:c,version:Number(r.Version),submittedAt:r.SubmittedAt,lecturerName:r.LecturerName,count:Number(r.RecordCount),archived:Boolean(archived[r.SubmissionID]),archive:archived[r.SubmissionID]?{at:archived[r.SubmissionID].Timestamp,reason:archived[r.SubmissionID].Reason,actor:archived[r.SubmissionID].Actor}:null};}).reverse();
+  const events=scoreRead_(book,'ScoreHistory'),archived={},additions=book.getSheetByName('ScoreAdditions')?scoreRead_(book,'ScoreAdditions'):[];events.forEach(function(e){if(e.Action==='Archived')archived[e.SubmissionID]=e;});
+  return scoreRead_(book,'ScoreSubmissions').map(function(r){const c=JSON.parse(r.CourseJSON);return {submissionId:r.SubmissionID,courseRef:r.CourseRef,course:c,version:Number(r.Version),submittedAt:r.SubmittedAt,lecturerName:r.LecturerName,count:Number(r.RecordCount),additions:additions.filter(function(a){return a.SubmissionID===r.SubmissionID;}).map(function(a){return {name:a.Name,matNo:a.MatNo,registrationType:a.RegistrationType,reason:a.Reason,addedBy:a.AddedBy,addedAt:a.AddedAt,reviewStatus:a.ReviewStatus};}),archived:Boolean(archived[r.SubmissionID]),archive:archived[r.SubmissionID]?{at:archived[r.SubmissionID].Timestamp,reason:archived[r.SubmissionID].Reason,actor:archived[r.SubmissionID].Actor}:null};}).reverse();
 }
 function scoreArchive_(book,data) {
   return scoreLock_(function(){
@@ -188,6 +202,7 @@ function scoreArchive_(book,data) {
 function scoreRoute_(data) {
   if(data.action==='score.admin.login')return scoreAdminLogin_(data);
   const book=scoreBook_();
+  if(data.action.indexOf('score.admin.classes')===0||data.action.indexOf('score.admin.class.')===0||data.action.indexOf('score.admin.import.')===0){scoreAdmin_(data.token);return scoreClassRoute_(book,data);}
   switch(data.action){
     case 'score.catalogue':return scoreCatalogue_(book);
     case 'score.course':return scoreLoad_(book,scoreText_(data.courseRef));

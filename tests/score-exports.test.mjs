@@ -13,6 +13,7 @@ class TestURL extends URL{static createObjectURL(blob){saved=blob;return 'blob:t
 const scope=vm.createContext({window:{jspdf,JSZip},document:{baseURI:'http://test/',createElement:()=>({set download(v){name=v;},set href(v){},click(){}})},URL:TestURL,fetch:async()=>({ok:true,arrayBuffer:async()=>fs.readFileSync(new URL('../assets/fonts/DejaVuSans.ttf',import.meta.url))}),Uint8Array,String,Blob,btoa,setTimeout:()=>0});
 vm.runInContext(fs.readFileSync(new URL('../js/score-exports.js',import.meta.url),'utf8'),scope);
 const snapshot={submissionId:'synthetic-test',version:1,submittedAt:'2026-11-13T00:00:00Z',lecturerName:'Demo Lecturer',examDate:'2026-11-12',course:{code:'TEST101',title:'A course for export validation',units:2,session:'2026/2027',programme:'BA',level:'100 Level',semester:'1'},students:Array.from({length:120},(_,i)=>({ref:'S'+i,matNo:'000'+i,name:i===0?'Ọlá Adéwálé':i===1?'=HYPERLINK("untrusted")':'Synthetic Student '+i,ca:25,exam:55,total:80,grade:'A'}))};
+Object.assign(snapshot.students[2],{source:'Lecturer added',registrationType:'Carry-over',reason:'Synthetic carry-over registration'});
 const output=path.join(os.tmpdir(),'rcm-score-export-qa');fs.mkdirSync(output,{recursive:true});
 await scope.window.ScoreExports.pdf(snapshot);
 assert.match(name,/\.pdf$/);assert.ok(saved.size>10000);const pdf=Buffer.from(await saved.arrayBuffer());assert.equal(pdf.subarray(0,4).toString(),'%PDF');fs.writeFileSync(path.join(output,'test.pdf'),pdf);
@@ -20,6 +21,7 @@ await scope.window.ScoreExports.excel(snapshot);
 assert.match(name,/\.xlsx$/);const xlsx=await saved.arrayBuffer();fs.writeFileSync(path.join(output,'test.xlsx'),Buffer.from(xlsx));
 const zip=await JSZip.loadAsync(xlsx),xml=await zip.file('xl/worksheets/sheet1.xml').async('string');
 assert.ok(xml.includes('Ọlá Adéwálé'));assert.ok(xml.includes('0000'));assert.ok(xml.includes('=HYPERLINK(&quot;untrusted&quot;)'));assert.ok(!xml.includes('<f>'));assert.ok(xml.includes('<v>80</v>'));
+assert.ok(xml.includes('Lecturer added'));assert.ok(xml.includes('Synthetic carry-over registration'));
 assert.equal((xml.match(/<row /g)||[]).length,130);
 console.log('PASS: 120-student PDF/XLSX generation, accented names, text matric numbers and formula injection prevention.');
 console.log('Synthetic export samples:',output);

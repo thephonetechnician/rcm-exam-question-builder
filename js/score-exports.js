@@ -20,8 +20,8 @@
       ['Programme', s.course.programme, 'Class', s.course.level, 'Semester', s.course.semester],
       ['Lecturer', s.lecturerName, 'Exam date', s.examDate], ['Submission ID', s.submissionId],
       ['Version', s.version, 'Submitted at', s.submittedAt], [],
-      ['No.','Matric number / student reference','Student name','CA','Exam','Total','Grade'],
-      ...s.students.map((r, i) => [i + 1, r.matNo || r.ref, r.name, r.ca, r.exam, r.total, r.grade])
+      ['No.','Matric number / student reference','Student name','CA','Exam','Total','Grade','Student source','Registration type','Addition reason'],
+      ...s.students.map((r, i) => [i + 1, r.matNo || r.ref, r.name, r.ca, r.exam, r.total, r.grade,r.source||'Registered roster',r.registrationType||'',r.reason||''])
     ];
   }
   async function excel(s) {
@@ -37,7 +37,7 @@
       // Explicit inline strings keep matric numbers intact and prevent formula injection.
       return typeof v === 'number' ? `<c r="${pos}"${style}><v>${v}</v></c>` : `<c r="${pos}" t="inlineStr"${style}><is><t xml:space="preserve">${xml(v)}</t></is></c>`;
     }).join('')+'</row>').join('');
-    zip.file('xl/worksheets/sheet1.xml', '<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="10" topLeftCell="A11" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="8" customWidth="1"/><col min="2" max="2" width="29" customWidth="1"/><col min="3" max="3" width="45" customWidth="1"/><col min="4" max="7" width="18" customWidth="1"/></cols><sheetData>'+data+'</sheetData><autoFilter ref="A10:G'+(s.students.length+10)+'"/><pageSetup orientation="landscape" paperSize="9"/></worksheet>');
+    zip.file('xl/worksheets/sheet1.xml', '<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="10" topLeftCell="A11" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="8" customWidth="1"/><col min="2" max="2" width="29" customWidth="1"/><col min="3" max="3" width="45" customWidth="1"/><col min="4" max="7" width="18" customWidth="1"/><col min="8" max="9" width="28" customWidth="1"/><col min="10" max="10" width="65" customWidth="1"/></cols><sheetData>'+data+'</sheetData><autoFilter ref="A10:J'+(s.students.length+10)+'"/><pageSetup orientation="landscape" paperSize="9"/></worksheet>');
     const blob = await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     save(blob, filename(s)+'.xlsx');
   }
@@ -53,10 +53,12 @@
       `Lecturer: ${s.lecturerName} · Examination date: ${s.examDate}`,
       `Submission: ${s.submissionId} · Version ${s.version} · Submitted: ${s.submittedAt}`
     ];
+    const manualCount=s.students.filter(r=>r.source==='Lecturer added').length;
+    if(manualCount)details.push(`${manualCount} lecturer-added student(s), marked below for administrator review.`);
     doc.setFontSize(9); let y=32;
     for(const line of details){const lines=doc.splitTextToSize(line,268);doc.text(lines,14,y);y+=lines.length*4.5+2;}
     if(typeof doc.autoTable!=='function')throw new Error('PDF table library did not load. Refresh and try again.');
-    doc.autoTable({startY:y+2,head:[['No.','Matric number / reference','Student name','CA','Exam','Total','Grade']],body:s.students.map((r,i)=>[i+1,r.matNo||r.ref,r.name,r.ca,r.exam,r.total,r.grade]),styles:{font:'RCM',fontStyle:'normal',fontSize:9,cellPadding:2.8},headStyles:{fillColor:[27,42,74],fontStyle:'normal'},alternateRowStyles:{fillColor:[246,247,250]},margin:{bottom:16},didDrawPage:()=>{doc.setFont('RCM','normal');doc.setFontSize(8);doc.setTextColor(100);doc.text('RCM Academic Portal · '+s.course.code+' · '+s.course.session+' · Version '+s.version+' · Page '+doc.internal.getNumberOfPages(),14,202);}});
+    doc.autoTable({startY:y+2,head:[['No.','Matric number / reference','Student name','CA','Exam','Total','Grade']],body:s.students.map((r,i)=>[i+1,r.matNo||r.ref,r.name+(r.source==='Lecturer added'?' [Lecturer added]':''),r.ca,r.exam,r.total,r.grade]),styles:{font:'RCM',fontStyle:'normal',fontSize:9,cellPadding:2.8},headStyles:{fillColor:[27,42,74],fontStyle:'normal'},alternateRowStyles:{fillColor:[246,247,250]},margin:{bottom:16},didDrawPage:()=>{doc.setFont('RCM','normal');doc.setFontSize(8);doc.setTextColor(100);doc.text('RCM Academic Portal · '+s.course.code+' · '+s.course.session+' · Version '+s.version+' · Page '+doc.internal.getNumberOfPages(),14,202);}});
     save(doc.output('blob'), filename(s)+'.pdf');
   }
   window.ScoreExports = Object.freeze({excel,pdf,rows});

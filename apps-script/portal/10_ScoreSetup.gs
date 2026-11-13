@@ -12,6 +12,7 @@ function setupScoreMvp_() {
       sh.getRange(2,1,Math.max(sh.getMaxRows()-1,1),SCORE_TABLES_[name].length).setNumberFormat('@');
     });
     scoreConfig_(book); // Require the existing Config; never seed/overwrite it silently.
+    if(typeof scoreEnsureClasses_==='function')scoreEnsureClasses_(book);
   });
 }
 function configureScoreAdmin_() {
@@ -34,6 +35,11 @@ function seedScoreDemo_() {
       ['DEMO-S003','DEMO/003','','Sample Student Three','DEMO','Test Class','Active']
     ]);
     scoreAppend_(b,'ScoreRegistrations',[['DEMO001','DEMO-S001','Regular'],['DEMO001','DEMO-S002','Regular'],['DEMO001','DEMO-S003','Regular']]);
+    if(typeof scoreEnsureClasses_==='function'){
+      scoreEnsureClasses_(b);
+      const c=scoreRead_(b,'ScoreClasses').filter(function(c){return c.Session===cfg.session&&c.Programme==='DEMO'&&c['Level/Set']==='Test Class';})[0];
+      scoreAppend_(b,'ScoreClassEnrolments',['DEMO-S001','DEMO-S002','DEMO-S003'].map(function(ref){return [c.ClassRef,ref];}));
+    }
   });
 }
 function importScoreTemplate_() {

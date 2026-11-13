@@ -32,11 +32,11 @@
       <div class="section-heading"><div><p class="eyebrow" id="selected-code"></p><h2 id="selected-title"></h2><p id="selected-meta"></p></div><span class="badge" id="course-state"></span></div>
       <form id="score-entry-form" hidden>
         <div class="score-fields"><div><label for="score-lecturer">Lecturer full name</label><input id="score-lecturer" required minlength="2" maxlength="150" autocomplete="name"></div><div><label for="score-date">Date examination was written</label><input id="score-date" type="date" required></div></div>
-        <div class="score-roster-heading"><h3>Registered students</h3><span id="entry-progress" aria-live="polite">0 completed</span></div>
+        <div class="score-roster-heading"><h3>Student score sheet</h3><span id="entry-progress" aria-live="polite">0 completed</span><button id="open-add-student" class="button secondary" type="button">+ Add student</button></div>
         <p class="muted" id="score-limits"></p>
         <p class="muted score-mobile-hint">Swipe the table sideways to reach the CA and Exam fields.</p>
         <div class="score-table-wrap" tabindex="0" aria-label="Student score entry table"><table class="score-table"><thead><tr><th scope="col">No.</th><th scope="col">Matric number / reference</th><th scope="col">Student name</th><th scope="col" id="ca-heading">CA</th><th scope="col" id="exam-heading">Exam</th><th scope="col">Total</th></tr></thead><tbody id="score-rows"></tbody></table></div>
-        <p class="muted">A blank score is incomplete. Enter 0 only when zero is the correct score. Contact the academic office if the roster is wrong.</p>
+        <p class="muted">A blank score is incomplete. Enter 0 only when zero is the correct score. Missing a student? Use Add student; additions are flagged for administrator review and do not change the permanent class register.</p>
         <div class="score-fields pin-fields"><div><label for="submit-pin">Create submission PIN</label><input id="submit-pin" type="password" minlength="8" maxlength="128" autocomplete="new-password" required><small>At least 8 characters. This PIN allows downloads only.</small></div><div><label for="confirm-pin">Confirm PIN</label><input id="confirm-pin" type="password" minlength="8" maxlength="128" autocomplete="new-password" required></div></div>
         <div class="score-warning"><strong>Submission is final.</strong> You cannot edit or delete submitted scores. Only the administrator can archive a version and reopen this course.</div>
         <button class="button primary" id="review-scores" type="submit">Preview score sheet →</button>
@@ -68,8 +68,10 @@
     <div class="score-table-wrap preview-table-wrap" tabindex="0" aria-label="Read-only score sheet preview">
       <table class="score-table"><thead><tr><th scope="col">No.</th><th scope="col">Matric number / reference</th><th scope="col">Student name</th><th scope="col" id="preview-ca-heading">CA</th><th scope="col" id="preview-exam-heading">Exam</th><th scope="col">Total</th></tr></thead><tbody id="preview-score-rows"></tbody></table>
     </div>
+    <div id="preview-additions" class="score-warning" hidden></div>
     <p class="score-warning">Keep your submission PIN. After submission, you cannot edit or delete these scores. Only the administrator can reopen the course.</p>
     <div class="dialog-actions preview-actions"><button class="button secondary" id="cancel-submit" type="button">Back to editing</button><button class="button primary" id="confirm-submit" type="button">Submit and lock</button></div>
   </dialog>
+  <dialog id="add-student-dialog" aria-labelledby="add-student-title"><h2 id="add-student-title">Add a student to this score sheet</h2><p>This addition is included in your submission and flagged for administrator review.</p><form id="add-student-form"><label for="added-name">Student full name</label><input id="added-name" required maxlength="150"><label for="added-mat">Matric number</label><input id="added-mat" required maxlength="100"><label for="added-type">Registration type</label><select id="added-type"><option value="Additional">Additional</option><option value="Carry-over">Carry-over</option><option value="Regular">Regular</option></select><label for="added-reason">Reason for adding this student</label><textarea id="added-reason" required minlength="5" maxlength="500"></textarea><p id="added-error" role="status" class="form-message"></p><div class="dialog-actions"><button id="cancel-add-student" class="button secondary" type="button">Cancel</button><button class="button primary" type="submit">Add to score sheet</button></div></form></dialog>
 </body>
 </html>

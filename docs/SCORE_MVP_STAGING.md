@@ -1,5 +1,9 @@
 # PIN-based score submission — staging
 
+For the current class-based registration release, follow
+[Class administration upgrade](CLASS_ADMIN_UPGRADE.md). The instructions below
+describe the original PIN-based score foundation and legacy editor import.
+
 This release defers lecturer login and paper-approval eligibility for score entry.
 Lecturers select a course, enter their name/exam date and roster scores, then create
 a PIN. A locked course cannot be edited or deleted through the lecturer API. Only

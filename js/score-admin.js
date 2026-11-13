@@ -3,7 +3,7 @@
   const $=id=>document.getElementById(id);
   let token='',expiryTimer,records=[],selected,archiving=false;
   function tell(text){$('admin-message').textContent=text;$('admin-message').hidden=!text;}
-  function reset(){token='';clearTimeout(expiryTimer);records=[];$('admin-history-list').replaceChildren();$('admin-history-panel').hidden=true;$('admin-login-panel').hidden=false;$('admin-logout').hidden=true;$('archive-dialog').close();}
+  function reset(){token='';clearTimeout(expiryTimer);records=[];window.ScoreClassAdmin?.stop();$('admin-history-list').replaceChildren();$('admin-history-panel').hidden=true;$('admin-login-panel').hidden=false;$('admin-logout').hidden=true;$('archive-dialog').close();}
   async function busy(button,label,fn){const old=button.textContent;button.disabled=true;button.textContent=label;try{await fn();}catch(error){if(/Administrator session expired/i.test(error.message))reset();tell(error.message);}finally{button.disabled=false;button.textContent=old;}}
   async function history(){const session=token;const data=await window.ScoreAPI.request({action:'score.admin.history',token:session});if(session!==token)return;records=data.submissions;render();}
   function render(){
@@ -17,6 +17,10 @@
       const info=document.createElement('p');info.textContent=`Lecturer: ${r.lecturerName} · ${r.count} students · Submitted ${r.submittedAt}`;
       const badge=document.createElement('span');badge.className='badge '+(r.archived?'':'ready');badge.textContent=r.archived?'Archived':'Locked';
       card.append(title,meta,info,badge);
+      if(r.additions?.length){
+        const review=document.createElement('details'),summary=document.createElement('summary');summary.textContent=`Review ${r.additions.length} lecturer-added student${r.additions.length===1?'':'s'}`;review.className='class-create';review.append(summary);
+        for(const a of r.additions){const note=document.createElement('p');note.textContent=`${a.name} · ${a.matNo} · ${a.registrationType}. Reason: ${a.reason}. Added by ${a.addedBy} at ${a.addedAt}. ${a.reviewStatus}`;review.append(note);}card.append(review);
+      }
       if(r.archive){const note=document.createElement('p');note.textContent=`Archived ${r.archive.at} by ${r.archive.actor}. Reason: ${r.archive.reason}`;card.append(note);}
       for(const [label,kind] of [['Download Excel','excel'],['Download PDF','pdf']]){
         const button=document.createElement('button');button.type='button';button.className='button secondary';button.textContent=label;
@@ -27,7 +31,7 @@
     }));
   }
   $('admin-login-form').addEventListener('submit',event=>{event.preventDefault();busy($('admin-signin'),'Signing in…',async()=>{
-    try{const result=await window.ScoreAPI.request({action:'score.admin.login',key:$('admin-key').value});token=result.token;$('admin-login-panel').hidden=true;$('admin-history-panel').hidden=false;$('admin-logout').hidden=false;expiryTimer=setTimeout(()=>{reset();tell('Your administrator session expired. Sign in again.');},Math.max(0,result.expires-Date.now()));await history();tell('Administrator access verified.');}finally{$('admin-key').value='';}
+    try{const result=await window.ScoreAPI.request({action:'score.admin.login',key:$('admin-key').value});token=result.token;$('admin-login-panel').hidden=true;$('admin-history-panel').hidden=false;$('admin-logout').hidden=false;expiryTimer=setTimeout(()=>{reset();tell('Your administrator session expired. Sign in again.');},Math.max(0,result.expires-Date.now()));await history();await window.ScoreClassAdmin?.start(token);tell('Administrator access verified.');}finally{$('admin-key').value='';}
   });});
   $('admin-refresh').addEventListener('click',()=>busy($('admin-refresh'),'Refreshing…',history));
   $('admin-search').addEventListener('input',render);

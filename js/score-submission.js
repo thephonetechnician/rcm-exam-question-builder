@@ -2,7 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   let courses = [], current, snapshot, pending, dirty = false, submitting = false, seq = 0;
-  const fields = new Map();
+  const fields = new Map(),manualStudents=new Map();
   const tell = text => { $('score-message').textContent = text; $('score-message').hidden = !text; };
   function downloadFeedback(text, success=false) {
     $('download-feedback').textContent=text; $('download-feedback').hidden=!text;
@@ -46,14 +46,27 @@
   }
   function showEntry() {
     const {config,students} = current;
-    fields.clear(); $('score-entry-form').reset();
+    fields.clear();manualStudents.clear(); $('score-entry-form').reset();
     $('ca-heading').textContent = `CA / ${config.caMax}`; $('exam-heading').textContent = `Exam / ${config.examMax}`;
     $('score-limits').textContent = `CA: 0–${config.caMax}. Examination: 0–${config.examMax}. Names and matric numbers come from the registered roster.`;
     // A date string uses the college timezone, not the browser's device timezone.
     $('score-date').max = new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Lagos',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-    $('score-rows').replaceChildren(...students.map((s, i) => {
+    $('score-rows').replaceChildren(...students.map(scoreRow));
+    $('open-add-student').disabled=!config.open;
+    $('review-scores').disabled = !config.open;
+    $('review-scores').textContent = config.open ? 'Preview score sheet →' : 'Submission is closed';
+    updateProgress();
+  }
+  function scoreRow(s,i) {
+      const config=current.config;
       const tr = document.createElement('tr');
       for (const value of [i+1,s.matNo||s.ref,s.name]) { const td=document.createElement('td'); td.textContent=value; tr.append(td); }
+      if(s.source==='Lecturer added'){
+        const flag=document.createElement('small'),remove=document.createElement('button');flag.className='lecturer-added';flag.textContent='Lecturer added · '+s.registrationType;
+        remove.type='button';remove.className='remove-added';remove.textContent='Remove';remove.setAttribute('aria-label','Remove '+s.name);
+        remove.addEventListener('click',()=>{if(submitting)return;current.students=current.students.filter(student=>student.ref!==s.ref);manualStudents.delete(s.ref);fields.delete(s.ref);tr.remove();Array.from($('score-rows').rows).forEach((row,index)=>row.cells[0].textContent=String(index+1));dirty=true;pending=null;updateProgress();});
+        tr.cells[2].append(flag,remove);
+      }
       const inputs = {};
       for (const [key,max] of [['ca',config.caMax],['exam',config.examMax]]) {
         const td=document.createElement('td'), input=document.createElement('input');
@@ -61,10 +74,6 @@
         input.addEventListener('input',()=>{dirty=true;pending=null;updateProgress();}); td.append(input); tr.append(td); inputs[key]=input;
       }
       const total=document.createElement('td'); total.className='score-total'; total.textContent='—';tr.append(total); fields.set(s.ref,{...inputs,total}); return tr;
-    }));
-    $('review-scores').disabled = !config.open;
-    $('review-scores').textContent = config.open ? 'Preview score sheet →' : 'Submission is closed';
-    updateProgress();
   }
   async function loadCourse(ref) {
     if (submitting) return;
@@ -73,7 +82,7 @@
     try {
       const data = await window.ScoreAPI.request({action:'score.course',courseRef:ref});
       if (ticket !== seq) return;
-      current=data; dirty=false; pending=null; snapshot=null; fields.clear();
+      current=data; dirty=false; pending=null; snapshot=null; fields.clear();manualStudents.clear();
       $('selected-course').hidden=false; $('selected-code').textContent=data.course.code;
       $('selected-title').textContent=data.course.title; $('selected-meta').textContent=meta(data.course);
       $('course-state').textContent=data.locked?'Submitted · Locked':'Ready for score entry';
@@ -93,7 +102,8 @@
     const pin=$('submit-pin').value;
     if(pin!==$('confirm-pin').value){tell('The two PIN entries do not match.');$('confirm-pin').focus();return;}
     if(pin.trim()!==pin){tell('Remove spaces from the beginning or end of your PIN.');return;}
-    if(!pending)pending={action:'score.submit',operationId:crypto.randomUUID(),courseRef:current.course.ref,revision:current.revision,lecturerName:$('score-lecturer').value.trim(),examDate:$('score-date').value,pin,entries:Array.from(fields,([studentRef,f])=>({studentRef,ca:f.ca.value,exam:f.exam.value}))};
+    if(!fields.size){tell('Add at least one student before submitting.');return;}
+    if(!pending)pending={action:'score.submit',operationId:crypto.randomUUID(),courseRef:current.course.ref,revision:current.revision,lecturerName:$('score-lecturer').value.trim(),examDate:$('score-date').value,pin,entries:Array.from(fields,([studentRef,f])=>({studentRef,ca:f.ca.value,exam:f.exam.value})),additions:Array.from(manualStudents.values())};
     $('preview-course-title').textContent=`${current.course.code} · ${current.course.title}`;
     $('preview-course-meta').textContent=meta(current.course);
     $('confirm-summary').textContent=`Lecturer: ${pending.lecturerName} · Examination date: ${pending.examDate} · ${current.students.length} students`;
@@ -102,17 +112,30 @@
     const entries=new Map(pending.entries.map(entry=>[entry.studentRef,entry]));
     $('preview-score-rows').replaceChildren(...current.students.map((student,index)=>{
       const entry=entries.get(student.ref),ca=Number(entry.ca),exam=Number(entry.exam),tr=document.createElement('tr');
-      for(const value of [index+1,student.matNo||student.ref,student.name,ca,exam,Math.round((ca+exam)*100)/100]){
+      for(const value of [index+1,student.matNo||student.ref,student.name+(student.source==='Lecturer added'?' (Lecturer added)':''),ca,exam,Math.round((ca+exam)*100)/100]){
         const td=document.createElement('td');td.textContent=String(value);tr.append(td);
       }
       return tr;
     }));
+    $('preview-additions').hidden=!manualStudents.size;
+    $('preview-additions').replaceChildren(...Array.from(manualStudents.values(),s=>{const p=document.createElement('p');p.textContent=`Lecturer added: ${s.name} (${s.matNo}) · ${s.registrationType}. Reason: ${s.reason}`;return p;}));
     $('confirm-dialog').showModal();
     $('preview-score-rows').parentElement.parentElement.scrollTop=0;
     $('preview-score-rows').parentElement.parentElement.scrollLeft=0;
     $('confirm-dialog').scrollTop=0;$('confirm-title').focus({preventScroll:true});
   });
   $('cancel-submit').addEventListener('click',()=>$('confirm-dialog').close());
+  $('open-add-student').addEventListener('click',()=>{$('add-student-form').reset();$('added-error').textContent='';$('add-student-dialog').showModal();});
+  $('cancel-add-student').addEventListener('click',()=>$('add-student-dialog').close());
+  $('add-student-form').addEventListener('submit',event=>{
+    event.preventDefault();if(!current||current.locked||submitting)return;
+    const name=$('added-name').value.trim(),matNo=$('added-mat').value.trim(),reason=$('added-reason').value.trim(),norm=v=>String(v).trim().toLowerCase().replace(/\s+/g,' ');
+    if(!name||!matNo||reason.length<5){$('added-error').textContent='Enter a name, matric number and a reason of at least 5 characters.';return;}
+    if(current.students.length>=1000||manualStudents.size>=100){$('added-error').textContent='This score sheet has reached its student limit.';return;}
+    if(current.students.some(s=>s.matNo&&norm(s.matNo)===norm(matNo))){$('added-error').textContent='That matric number is already on this score sheet.';return;}
+    const student={ref:'M_'+crypto.randomUUID(),name,matNo,registrationType:$('added-type').value,reason,source:'Lecturer added'};
+    current.students.push(student);manualStudents.set(student.ref,student);$('score-rows').append(scoreRow(student,current.students.length-1));dirty=true;pending=null;updateProgress();$('add-student-dialog').close();fields.get(student.ref).ca.focus();
+  });
   $('confirm-submit').addEventListener('click',()=>busy($('confirm-submit'),'Submitting…',async()=>{
     if(submitting||!pending)return; submitting=true; $('cancel-submit').disabled=true;
     try {

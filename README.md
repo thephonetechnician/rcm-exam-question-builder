@@ -1,5 +1,20 @@
 # RCM Academic Portal
 
+## Class administration
+
+The score administrator can create a session/programme/class, add one course or
+student, or download class-specific Excel templates and preview Excel/CSV imports.
+Active class students automatically populate its regular course rosters. Lecturer
+additions are included with a reason and marked for administrator review.
+
+Install the updated backend using [the class administration upgrade](docs/CLASS_ADMIN_UPGRADE.md).
+It adds tables without replacing existing scores, PIN hashes or archive history.
+The old preparation workbook's Registrations tab is unnecessary for regular class
+enrolment in this workflow. Do not put filled student workbooks in this repository.
+
+Run `node tests/run-all.mjs` for the complete authentication, submission,
+class/import/roster, template and export checks.
+
 The dashboard entry point is `index.html`. The existing Question Builder
 is preserved at `exam-builder.html`, using its original scripts, styles
 and Apps Script endpoint. The embedded HTML fragment remains unchanged.
