@@ -1,3 +1,3 @@
-// Set this to the TEST deployment URL after installing apps-script/portal.
-// Deployment URLs are public configuration; never place access codes here.
-window.RCM_PORTAL_CONFIG = Object.freeze({ apiUrl: "" });
+window.RCM_PORTAL_CONFIG = Object.freeze({
+  apiUrl: "https://script.google.com/macros/s/AKfycbxK-fucAYtii3SmrlutrPZJVTHd1Q7uEdte_N_EBoiX_gEkxtUZB2JuKZZ3V_uvXxwC/exec"
+});
