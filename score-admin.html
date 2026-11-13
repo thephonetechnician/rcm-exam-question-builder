@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">
+  <title>Score Administration | RCM Academic Portal</title>
+  <link rel="stylesheet" href="css/portal.css"><link rel="stylesheet" href="css/scores.css">
+  <script defer src="assets/vendor/jszip.min.js"></script>
+  <script defer src="assets/vendor/jspdf.umd.min.js"></script>
+  <script defer src="assets/vendor/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="js/score-config.js"></script><script defer src="js/score-api.js"></script><script defer src="js/score-exports.js"></script><script defer src="js/score-admin.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="score-header"><a class="brand" href="index.html"><img src="assets/rcm-logo.jpg" alt="" width="52" height="52"><span><span class="institution">Redeemed College of Missions</span><span class="portal-name">Academic Portal</span></span></a><a class="text-link" href="score-submission.html">← Score submission</a></header>
+  <main id="main" class="score-main">
+    <div class="page-intro"><div><p class="eyebrow">ADMINISTRATOR ACCESS</p><h1>Every version accounted for.</h1><p>Review submissions, download archived records and reopen a course for correction.</p></div><button class="button secondary" id="admin-logout" hidden>Sign out</button></div>
+    <p id="admin-message" class="notice" role="status" aria-live="polite" hidden></p>
+    <section class="score-panel admin-login" id="admin-login-panel" aria-labelledby="admin-login-title"><h2 id="admin-login-title">Score administrator sign in</h2><p class="muted">Use your private administrator key. Lecturer PINs cannot reopen courses.</p><form id="admin-login-form"><label for="admin-key">Administrator key</label><input id="admin-key" type="password" required minlength="20" maxlength="256" autocomplete="current-password"><p><button id="admin-signin" class="button primary" type="submit">Sign in</button></p></form></section>
+    <section class="score-panel" id="admin-history-panel" hidden aria-labelledby="history-title"><div class="section-heading"><div><h2 id="history-title">Submission history</h2><p>Archiving preserves the full score sheet and reopens that course. No records are deleted.</p></div><button id="admin-refresh" class="button secondary" type="button">Refresh history</button></div><label for="admin-search">Find a course, lecturer or session</label><input type="search" id="admin-search" placeholder="Search submission history"><div id="admin-history-list"></div></section>
+  </main>
+  <dialog id="archive-dialog" aria-labelledby="archive-title"><h2 id="archive-title">Archive and reopen?</h2><p id="archive-summary"></p><form id="archive-form"><label for="archive-reason">Reason for correction</label><textarea id="archive-reason" required minlength="5" maxlength="500"></textarea><p>The saved scores remain in history. The lecturer can submit a new version with a new PIN.</p><div class="dialog-actions"><button id="cancel-archive" class="button secondary" type="button">Cancel</button><button id="confirm-archive" class="button primary" type="submit">Archive and reopen</button></div></form></dialog>
+</body>
+</html>

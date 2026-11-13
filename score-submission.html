@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1b2a4a">
+  <title>Submit Scores | RCM Academic Portal</title>
+  <link rel="stylesheet" href="css/portal.css">
+  <link rel="stylesheet" href="css/scores.css">
+  <script defer src="assets/vendor/jszip.min.js"></script>
+  <script defer src="assets/vendor/jspdf.umd.min.js"></script>
+  <script defer src="assets/vendor/jspdf.plugin.autotable.min.js"></script>
+  <script defer src="js/score-config.js"></script>
+  <script defer src="js/score-api.js"></script>
+  <script defer src="js/score-exports.js"></script>
+  <script defer src="js/score-submission.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="score-header"><a class="brand" href="index.html"><img src="assets/rcm-logo.jpg" alt="" width="52" height="52"><span><span class="institution">Redeemed College of Missions</span><span class="portal-name">Academic Portal</span></span></a><a class="text-link" href="index.html">← Portal home</a></header>
+  <main id="main" class="score-main">
+    <div class="page-intro"><div><p class="eyebrow">RESULT SUBMISSION</p><h1>From your class to the record.</h1><p>Select a course, enter scores and submit once. No lecturer sign-in required.</p></div><span class="term-label" id="score-session">Loading session…</span></div>
+    <ol class="score-steps" aria-label="Submission workflow"><li>Select your course</li><li>Enter and review scores</li><li>Lock and download</li></ol>
+    <p id="score-message" class="notice" role="status" aria-live="polite" hidden></p>
+    <section class="score-panel" aria-labelledby="search-title">
+      <div class="section-heading"><div><h2 id="search-title">Find your course</h2><p>Search by code, title, programme or class. Check the session and semester carefully.</p></div><button id="refresh-courses" class="button secondary" type="button">Refresh courses</button></div>
+      <label for="course-search">Course search</label><input type="search" id="course-search" placeholder="For example: CRS 101 or 100 Level" autocomplete="off">
+      <p id="catalogue-status" class="muted" role="status">Loading courses…</p>
+      <div id="score-course-list" class="course-grid"></div>
+    </section>
+    <section id="selected-course" class="score-panel" aria-labelledby="selected-title" hidden>
+      <div class="section-heading"><div><p class="eyebrow" id="selected-code"></p><h2 id="selected-title"></h2><p id="selected-meta"></p></div><span class="badge" id="course-state"></span></div>
+      <form id="score-entry-form" hidden>
+        <div class="score-fields"><div><label for="score-lecturer">Lecturer full name</label><input id="score-lecturer" required minlength="2" maxlength="150" autocomplete="name"></div><div><label for="score-date">Date examination was written</label><input id="score-date" type="date" required></div></div>
+        <div class="score-roster-heading"><h3>Registered students</h3><span id="entry-progress" aria-live="polite">0 completed</span></div>
+        <p class="muted" id="score-limits"></p>
+        <p class="muted score-mobile-hint">Swipe the table sideways to reach the CA and Exam fields.</p>
+        <div class="score-table-wrap" tabindex="0" aria-label="Student score entry table"><table class="score-table"><thead><tr><th scope="col">No.</th><th scope="col">Matric number / reference</th><th scope="col">Student name</th><th scope="col" id="ca-heading">CA</th><th scope="col" id="exam-heading">Exam</th><th scope="col">Total</th></tr></thead><tbody id="score-rows"></tbody></table></div>
+        <p class="muted">A blank score is incomplete. Enter 0 only when zero is the correct score. Contact the academic office if the roster is wrong.</p>
+        <div class="score-fields pin-fields"><div><label for="submit-pin">Create submission PIN</label><input id="submit-pin" type="password" minlength="8" maxlength="128" autocomplete="new-password" required><small>At least 8 characters. This PIN allows downloads only.</small></div><div><label for="confirm-pin">Confirm PIN</label><input id="confirm-pin" type="password" minlength="8" maxlength="128" autocomplete="new-password" required></div></div>
+        <div class="score-warning"><strong>Submission is final.</strong> You cannot edit or delete submitted scores. Only the administrator can archive a version and reopen this course.</div>
+        <button class="button primary" id="review-scores" type="submit">Review and submit scores →</button>
+      </form>
+      <div id="locked-course" hidden>
+        <div class="score-success"><strong>This course is submitted and locked.</strong><p id="locked-detail">Use the submission PIN to retrieve the submitted score sheet.</p></div>
+        <form id="download-form"><label for="download-pin">Submission PIN</label><div class="download-row"><input id="download-pin" type="password" minlength="8" maxlength="128" autocomplete="off" required><button class="button primary" id="unlock-download" type="submit">Unlock downloads</button></div></form>
+        <div id="download-actions" class="download-actions" hidden><p id="download-details" class="muted"></p><button class="button secondary" id="download-excel" type="button">Download Excel</button><button class="button secondary" id="download-pdf" type="button">Download PDF</button><button class="button secondary" id="clear-download" type="button">Close downloads</button></div>
+      </div>
+    </section>
+    <p class="muted score-bottom-note">Student records are for authorised academic use. PINs are never placed in URLs. <a href="score-admin.html">Administrator access</a></p>
+  </main>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-title"><h2 id="confirm-title">Submit and lock this score sheet?</h2><p id="confirm-summary"></p><p>You have reviewed every score and saved your PIN. Further changes require an administrator reset.</p><div class="dialog-actions"><button class="button secondary" id="cancel-submit" type="button">Go back</button><button class="button primary" id="confirm-submit" type="button">Submit and lock</button></div></dialog>
+</body>
+</html>

@@ -8,10 +8,17 @@ The dashboard now includes responsive workspace navigation, a lecturer sign-in
 dialog, assigned-course cards and a direct saved-paper shortcut. Lecturer access
 is implemented for staging but disabled until its endpoint is configured in
 `js/portal-config.js`. See [staging installation](apps-script/portal/README.md).
-Result Submission and Academic Administration are not connected yet.
+PIN-based Result Submission and score administration are now implemented in
+`score-submission.html` and `score-admin.html`. They require the score service
+installation and a new staging deployment described in
+[score staging setup](docs/SCORE_MVP_STAGING.md). General Academic Administration
+and paper-review eligibility remain deferred.
 
 Run `node tests/portal-auth.test.mjs` to check the read-only authentication service
 against synthetic Apps Script services. Real deployment testing is still required.
+Run `node tests/score-service.test.mjs` and `node tests/score-exports.test.mjs`
+for submission/history and Excel/PDF checks. `node tests/preview-scores.mjs`
+serves a local synthetic presentation rehearsal; it never connects to Google.
 
 Before deployment, serve this directory locally and check the dashboard at
 desktop and mobile widths. Open the builder, switch its tabs, generate a
