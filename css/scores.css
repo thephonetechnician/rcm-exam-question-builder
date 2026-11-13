@@ -39,6 +39,14 @@
 .download-actions { margin-top: 20px; }
 .download-actions button { margin: 0 8px 8px 0; }
 .dialog-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 22px; }
+.score-preview { width: 1060px; max-width: calc(100vw - 32px); max-height: 90vh; overflow-y: auto; }
+.score-preview h2 { font-size: 28px; }
+.preview-letterhead { display: grid; gap: 5px; color: var(--navy); border-top: 3px solid var(--maroon); border-bottom: 1px solid var(--line); padding: 18px 0; margin-top: 24px; }
+.preview-letterhead span { font-size: 11px; letter-spacing: .12em; }
+.preview-table-wrap { max-height: 46vh; overflow: auto; margin-top: 18px; }
+.preview-table-wrap thead th { position: sticky; top: 0; z-index: 1; }
+.preview-actions { position: sticky; bottom: -30px; background: white; padding: 16px 0; margin: 0; border-top: 1px solid var(--line); }
+@media(max-width:700px) { .score-preview { padding: 20px 16px; } .score-preview h2 { font-size: 24px; } .preview-actions { bottom: -20px; flex-wrap: wrap; } }
 small { color: var(--muted); font-size: 11px; }
 .score-bottom-note { display: flex; gap: 20px; justify-content: space-between; flex-wrap: wrap; }
 .admin-login { max-width: 540px; }

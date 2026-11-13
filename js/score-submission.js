@@ -63,7 +63,7 @@
       const total=document.createElement('td'); total.className='score-total'; total.textContent='—';tr.append(total); fields.set(s.ref,{...inputs,total}); return tr;
     }));
     $('review-scores').disabled = !config.open;
-    $('review-scores').textContent = config.open ? 'Review and submit scores →' : 'Submission is closed';
+    $('review-scores').textContent = config.open ? 'Preview score sheet →' : 'Submission is closed';
     updateProgress();
   }
   async function loadCourse(ref) {
@@ -94,8 +94,23 @@
     if(pin!==$('confirm-pin').value){tell('The two PIN entries do not match.');$('confirm-pin').focus();return;}
     if(pin.trim()!==pin){tell('Remove spaces from the beginning or end of your PIN.');return;}
     if(!pending)pending={action:'score.submit',operationId:crypto.randomUUID(),courseRef:current.course.ref,revision:current.revision,lecturerName:$('score-lecturer').value.trim(),examDate:$('score-date').value,pin,entries:Array.from(fields,([studentRef,f])=>({studentRef,ca:f.ca.value,exam:f.exam.value}))};
-    $('confirm-summary').textContent=`${current.course.code} · ${current.course.title} · ${current.students.length} students · ${pending.lecturerName} · Exam ${pending.examDate}.`;
+    $('preview-course-title').textContent=`${current.course.code} · ${current.course.title}`;
+    $('preview-course-meta').textContent=meta(current.course);
+    $('confirm-summary').textContent=`Lecturer: ${pending.lecturerName} · Examination date: ${pending.examDate} · ${current.students.length} students`;
+    $('preview-ca-heading').textContent=`CA / ${current.config.caMax}`;
+    $('preview-exam-heading').textContent=`Exam / ${current.config.examMax}`;
+    const entries=new Map(pending.entries.map(entry=>[entry.studentRef,entry]));
+    $('preview-score-rows').replaceChildren(...current.students.map((student,index)=>{
+      const entry=entries.get(student.ref),ca=Number(entry.ca),exam=Number(entry.exam),tr=document.createElement('tr');
+      for(const value of [index+1,student.matNo||student.ref,student.name,ca,exam,Math.round((ca+exam)*100)/100]){
+        const td=document.createElement('td');td.textContent=String(value);tr.append(td);
+      }
+      return tr;
+    }));
     $('confirm-dialog').showModal();
+    $('preview-score-rows').parentElement.parentElement.scrollTop=0;
+    $('preview-score-rows').parentElement.parentElement.scrollLeft=0;
+    $('confirm-dialog').scrollTop=0;$('confirm-title').focus({preventScroll:true});
   });
   $('cancel-submit').addEventListener('click',()=>$('confirm-dialog').close());
   $('confirm-submit').addEventListener('click',()=>busy($('confirm-submit'),'Submitting…',async()=>{

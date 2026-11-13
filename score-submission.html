@@ -39,7 +39,7 @@
         <p class="muted">A blank score is incomplete. Enter 0 only when zero is the correct score. Contact the academic office if the roster is wrong.</p>
         <div class="score-fields pin-fields"><div><label for="submit-pin">Create submission PIN</label><input id="submit-pin" type="password" minlength="8" maxlength="128" autocomplete="new-password" required><small>At least 8 characters. This PIN allows downloads only.</small></div><div><label for="confirm-pin">Confirm PIN</label><input id="confirm-pin" type="password" minlength="8" maxlength="128" autocomplete="new-password" required></div></div>
         <div class="score-warning"><strong>Submission is final.</strong> You cannot edit or delete submitted scores. Only the administrator can archive a version and reopen this course.</div>
-        <button class="button primary" id="review-scores" type="submit">Review and submit scores →</button>
+        <button class="button primary" id="review-scores" type="submit">Preview score sheet →</button>
       </form>
       <div id="locked-course" hidden>
         <div class="score-success"><strong>This course is submitted and locked.</strong><p id="locked-detail">Use the submission PIN to retrieve the submitted score sheet.</p></div>
@@ -57,6 +57,19 @@
     </section>
     <p class="muted score-bottom-note">Student records are for authorised academic use. PINs are never placed in URLs. <a href="score-admin.html">Administrator access</a></p>
   </main>
-  <dialog id="confirm-dialog" aria-labelledby="confirm-title"><h2 id="confirm-title">Submit and lock this score sheet?</h2><p id="confirm-summary"></p><p>You have reviewed every score and saved your PIN. Further changes require an administrator reset.</p><div class="dialog-actions"><button class="button secondary" id="cancel-submit" type="button">Go back</button><button class="button primary" id="confirm-submit" type="button">Submit and lock</button></div></dialog>
+  <dialog id="confirm-dialog" class="score-preview" aria-labelledby="confirm-title" aria-describedby="confirm-description">
+    <p class="eyebrow">DRAFT PREVIEW · NOT SUBMITTED</p>
+    <h2 id="confirm-title" tabindex="-1">Review your score sheet</h2>
+    <p id="confirm-description">Check the course details and every student’s scores. Nothing is submitted until you choose Submit and lock.</p>
+    <div class="preview-letterhead"><strong>REDEEMED COLLEGE OF MISSIONS</strong><span>EXAMINATION SCORE SHEET</span></div>
+    <h3 id="preview-course-title"></h3><p id="preview-course-meta" class="muted"></p>
+    <p id="confirm-summary"></p>
+    <p class="muted score-mobile-hint">Swipe the table sideways to check every score column.</p>
+    <div class="score-table-wrap preview-table-wrap" tabindex="0" aria-label="Read-only score sheet preview">
+      <table class="score-table"><thead><tr><th scope="col">No.</th><th scope="col">Matric number / reference</th><th scope="col">Student name</th><th scope="col" id="preview-ca-heading">CA</th><th scope="col" id="preview-exam-heading">Exam</th><th scope="col">Total</th></tr></thead><tbody id="preview-score-rows"></tbody></table>
+    </div>
+    <p class="score-warning">Keep your submission PIN. After submission, you cannot edit or delete these scores. Only the administrator can reopen the course.</p>
+    <div class="dialog-actions preview-actions"><button class="button secondary" id="cancel-submit" type="button">Back to editing</button><button class="button primary" id="confirm-submit" type="button">Submit and lock</button></div>
+  </dialog>
 </body>
 </html>
