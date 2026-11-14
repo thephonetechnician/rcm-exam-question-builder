@@ -14,6 +14,7 @@
   }
   const save = (blob, name) => { const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 10000); };
   function rows(s) {
+    const students=window.ScoreOrder?[...s.students].sort(window.ScoreOrder.compare):s.students;
     return [
       ['REDEEMED COLLEGE OF MISSIONS'], ['SUBMITTED SCORE SHEET'],
       ['Course', s.course.code, s.course.title], ['Units', s.course.units, 'Session', s.course.session],
@@ -21,7 +22,7 @@
       ['Lecturer', s.lecturerName, 'Exam date', s.examDate], ['Submission ID', s.submissionId],
       ['Version', s.version, 'Submitted at', s.submittedAt], [],
       ['No.','Matric number / student reference','Student name','CA','Exam','Total','Grade','Student source','Registration type','Addition reason'],
-      ...s.students.map((r, i) => [i + 1, r.matNo || r.ref, r.name, r.ca, r.exam, r.total, r.grade,r.source||'Registered roster',r.registrationType||'',r.reason||''])
+      ...students.map((r, i) => [i + 1, r.matNo || r.ref, r.name, r.ca, r.exam, r.total, r.grade,r.source||'Registered roster',r.registrationType||'',r.reason||''])
     ];
   }
   async function excel(s) {
@@ -42,6 +43,7 @@
     save(blob, filename(s)+'.xlsx');
   }
   async function pdf(s) {
+    s={...s,students:window.ScoreOrder?[...s.students].sort(window.ScoreOrder.compare):s.students};
     if (!window.jspdf?.jsPDF) throw new Error('PDF export library did not load. Check your connection and refresh.');
     const doc = new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     doc.addFileToVFS('DejaVuSans.ttf', await fontData()); doc.addFont('DejaVuSans.ttf','RCM','normal'); doc.setFont('RCM','normal');

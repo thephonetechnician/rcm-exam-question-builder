@@ -15,6 +15,10 @@ enrolment in this workflow. Do not put filled student workbooks in this reposito
 Run `node tests/run-all.mjs` for the complete authentication, submission,
 class/import/roster, template and export checks.
 
+Unsubmitted assignments can be removed/restored from the admin class lists with
+recorded reasons. Student masters and score history are retained. Course units may
+be zero. Rosters, preview and downloads use natural matric-number order.
+
 The dashboard entry point is `index.html`. The existing Question Builder
 is preserved at `exam-builder.html`, using its original scripts, styles
 and Apps Script endpoint. The embedded HTML fragment remains unchanged.

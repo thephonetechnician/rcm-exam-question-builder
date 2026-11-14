@@ -1,5 +1,21 @@
 # Portal checkpoint — 14 November 2026
 
+## Assignment corrections, ordering and zero-credit courses
+
+Local additions now provide reversible Remove from class / Remove course / Restore
+controls, with reasons and append-only ScoreCorrections events. Submitted score
+history blocks assignment corrections. The user reports their mistaken assignments
+have no submissions; they will perform the actual corrections after this upgrade.
+No live records have been changed by the agent.
+
+Zero credit is accepted in course creation/import/score loading. Student displays,
+preview and exports use natural numeric matric order while preserving identifier
+text. Tests include very large numbers, leading zeros, blank IDs, safe retries,
+restoring assignments and preservation of score input while inserting added rows.
+
+Changes are uncommitted and need frontend sync plus updated modules 09/10/11,
+safe setup and staging redeployment. No key/hash/salt reset is needed.
+
 ## Current priority: class registration and roster management
 
 The new class-first admin workspace supports class creation, one-at-a-time records,

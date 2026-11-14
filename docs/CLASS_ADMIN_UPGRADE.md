@@ -47,7 +47,37 @@ one class/semester's template into another. Input headings stay on row 1. Preser
 the Courses or Students tab name. Do not add formulas. Matric/admission columns are
 formatted as text to preserve leading zeros. Excel `.xlsx` and comma-separated CSV
 are supported; `.xls` must first be saved as `.xlsx`. Limits: 1,000 rows and 3 MB per
-upload. Course units must be greater than 0 and at most 30.
+upload. Course units may be 0 through 30; zero-credit courses are supported.
+
+## Correct mistakes before scores are submitted
+
+In Manage students, use **Remove from class** on the wrong enrolment, then add or
+import the student into the correct class. The student's master record is retained.
+In Manage courses, use **Remove course**, then register that course under the
+correct class. The old offering is retained as a removed assignment.
+
+Every removal/restore requires a reason and is recorded in ScoreCorrections. Tick
+**Show removed assignments (restore available)** to undo a removal with **Restore**.
+Re-importing a removed assignment will not silently restore it. This is assignment
+correction, not deletion of an entire class or student master record.
+
+The server checks again under its lock: a course with any submitted version cannot
+be removed/restored here; student enrolment corrections are blocked if that class
+has submitted score sheets. This includes archived versions. Existing submitted
+snapshots and archive history are never edited by these controls.
+
+For this update, replace modules 09, 10 and 11, run the same safe setup wrapper, delete
+the temporary wrapper and redeploy a new staging version. Setup adds ScoreCorrections;
+keep the same spreadsheet, frontend origin, administrator hash and salt.
+
+## Matric number order
+
+Class lists and live rosters use natural numeric matric order: for example 2, 0003,
+10. Numeric components are compared without rounding large numbers; the original
+matric text and leading zeros remain unchanged. Lecturer-added rows are inserted in
+order without clearing scores already entered. Previews and both download formats
+follow the same ordering. Students without a matric number appear after numbered
+students, using their stable reference as a tie-breaker.
 
 The older preparation workbook can be read by the new upload controls when its
 selected Courses/Students tab contains only the currently selected class (and,

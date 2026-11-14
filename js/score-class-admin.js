@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const $=id=>document.getElementById(id);
-  let token='',classes=[],current=null,details=null,kind='courses',plan=null,rawRows=null,sequence=0;
+  let token='',classes=[],current=null,details=null,kind='courses',plan=null,rawRows=null,sequence=0,correction=null,correcting=false;
   const labels={CourseCode:'Course code',Title:'Course title',Units:'Credit units',Name:'Student full name',MatNo:'Matric number',AdmissionNo:'Admission number (optional)'};
   function tell(text){$('class-message').textContent=text;$('class-message').hidden=!text;}
   function clearPlan(){plan=null;rawRows=null;$('class-import-preview').hidden=true;$('class-preview-rows').replaceChildren();}
@@ -32,15 +32,15 @@
     $('class-single-form').closest('details').open=false;
     $('class-single-fields').replaceChildren(...window.ScoreImports.fields[kind].map(name=>{
       const div=document.createElement('div'),label=document.createElement('label'),input=document.createElement('input');input.id='class-single-'+name;label.htmlFor=input.id;label.textContent=labels[name];input.name=name;input.maxLength=250;
-      input.required=['Name','Title','CourseCode','Units'].includes(name);if(name==='Units'){input.type='number';input.min='0.01';input.max='30';input.step='0.01';}div.append(label,input);return div;
+      input.required=['Name','Title','CourseCode','Units'].includes(name);if(name==='Units'){input.type='number';input.min='0';input.max='30';input.step='0.01';}div.append(label,input);return div;
     }));
     renderRecords();
   }
   function renderRecords(){
-    const courseMode=kind==='courses',records=courseMode?details.courses.filter(c=>c.semester===$('class-semester').value):details.students;
+    const courseMode=kind==='courses',records=(courseMode?details.courses.filter(c=>c.semester===$('class-semester').value):details.students).filter(r=>$('class-show-removed').checked||!r.removed);
     $('class-records-title').textContent=courseMode?'Courses in this semester':'Students registered in this class';$('class-records-count').textContent=`${records.length} record${records.length===1?'':'s'}`;
-    const tr=document.createElement('tr');for(const label of courseMode?['Code','Title','Units','Semester']:['Matric number','Admission number','Student name','Status']){const th=document.createElement('th');th.scope='col';th.textContent=label;tr.append(th);}$('class-records-head').replaceChildren(tr);
-    $('class-records-rows').replaceChildren(...records.map(r=>{const tr=document.createElement('tr');for(const v of courseMode?[r.code,r.title,r.units,r.semester]:[r.matNo||'Not assigned',r.admissionNo||'—',r.name,r.status]){const td=document.createElement('td');td.textContent=String(v);tr.append(td);}return tr;}));
+    const tr=document.createElement('tr');for(const label of [...(courseMode?['Code','Title','Units','Semester']:['Matric number','Admission number','Student name','Status']),'Assignment / action']){const th=document.createElement('th');th.scope='col';th.textContent=label;tr.append(th);}$('class-records-head').replaceChildren(tr);
+    $('class-records-rows').replaceChildren(...records.map(r=>{const tr=document.createElement('tr');for(const v of courseMode?[r.code,r.title,r.units,r.semester]:[r.matNo||'Not assigned',r.admissionNo||'—',r.name,r.status]){const td=document.createElement('td');td.textContent=String(v);tr.append(td);}const td=document.createElement('td');if(current.editable){const button=document.createElement('button');button.type='button';button.className='button secondary';button.textContent=r.removed?'Restore':courseMode?'Remove course':'Remove from class';button.addEventListener('click',()=>{correction={action:'score.admin.class.assignment',classRef:current.ref,kind,ref:r.ref,change:r.removed?'Restore':'Remove',expectedRemoved:Boolean(r.removed),operationId:crypto.randomUUID()};$('assignment-title').textContent=button.textContent;$('assignment-summary').textContent=`${current.programme} · ${current.level} · ${courseMode?r.code+' — '+r.title:r.name+' — '+(r.matNo||r.ref)}`;$('assignment-reason').value='';$('assignment-error').textContent='';$('assignment-dialog').showModal();});td.append(button);}else td.textContent=r.removed?'Removed':'Active';tr.append(td);return tr;}));
   }
   async function preview(rows){
     const ticket=sequence,session=token,ctx=context(),mode=kind,semester=ctx.semester;
@@ -58,6 +58,10 @@
   for(const [id,mode] of [['class-courses-mode','courses'],['class-students-mode','students']])$(id).addEventListener('click',()=>{kind=mode;renderMode();});
   $('class-semester').addEventListener('change',()=>{sequence++;clearPlan();tell('');$('class-upload').value='';renderRecords();});
   $('class-upload').addEventListener('change',()=>{clearPlan();tell('');});
+  $('class-show-removed').addEventListener('change',renderRecords);
+  $('assignment-cancel').addEventListener('click',()=>{if(!correcting)$('assignment-dialog').close();});
+  $('assignment-dialog').addEventListener('cancel',event=>{if(correcting)event.preventDefault();});
+  $('assignment-form').addEventListener('submit',event=>{event.preventDefault();busy($('assignment-save'),'Saving…',async()=>{if(!correction||correcting)return;correcting=true;$('assignment-cancel').disabled=true;try{await request({...correction,reason:$('assignment-reason').value.trim()});$('assignment-dialog').close();await list(correction.classRef);tell(correction.change==='Remove'?'Assignment removed. Add it to the correct class, or select Show removed assignments to restore it.':'Assignment restored.');}catch(error){$('assignment-error').textContent=error.message;throw error;}finally{correcting=false;$('assignment-cancel').disabled=false;}});});
   $('class-download-template').addEventListener('click',()=>busy($('class-download-template'),'Preparing…',()=>window.ScoreImports.download(kind,context())));
   $('class-preview-import').addEventListener('click',()=>busy($('class-preview-import'),'Reading…',async()=>{const ticket=sequence,mode=kind,ctx=context();const rows=await window.ScoreImports.read($('class-upload').files[0],mode,ctx);if(ticket!==sequence||mode!==kind)return;await preview(rows);}));
   $('class-single-form').addEventListener('input',clearPlan);

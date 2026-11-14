@@ -61,7 +61,7 @@ function importScoreTemplate_() {
     const courses=Object.create(null),students=Object.create(null),mats=Object.create(null),admissions=Object.create(null),pairs=Object.create(null);
     input.Courses.forEach(function(c){
       if(!/^[A-Za-z0-9_-]{1,100}$/.test(c.CourseRef)||courses[c.CourseRef])throw new Error('Missing/duplicate/invalid CourseRef. Use 1–100 letters, numbers, hyphens or underscores.');
-      if(!c.CourseCode||!c.Title||!c.Session||!c.Programme||!c['Level/Set']||!['1','2','3'].includes(c.Semester)||!Number.isFinite(Number(c.Units))||Number(c.Units)<=0)throw new Error('Incomplete course: '+c.CourseRef);
+      if(!c.CourseCode||!c.Title||!c.Session||!c.Programme||!c['Level/Set']||!['1','2','3'].includes(c.Semester)||c.Units===''||!Number.isFinite(Number(c.Units))||Number(c.Units)<0)throw new Error('Incomplete course: '+c.CourseRef);
       courses[c.CourseRef]=true;
     });
     input.Students.forEach(function(s){

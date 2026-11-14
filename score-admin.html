@@ -7,7 +7,7 @@
   <script defer src="assets/vendor/jszip.min.js"></script>
   <script defer src="assets/vendor/jspdf.umd.min.js"></script>
   <script defer src="assets/vendor/jspdf.plugin.autotable.min.js"></script>
-  <script defer src="js/score-config.js"></script><script defer src="js/score-api.js"></script><script defer src="js/score-exports.js"></script><script defer src="js/score-imports.js"></script><script defer src="js/score-class-admin.js"></script><script defer src="js/score-admin.js"></script>
+  <script defer src="js/score-config.js"></script><script defer src="js/score-api.js"></script><script defer src="js/score-order.js"></script><script defer src="js/score-exports.js"></script><script defer src="js/score-imports.js"></script><script defer src="js/score-class-admin.js"></script><script defer src="js/score-admin.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -35,12 +35,13 @@
           <details class="class-create"><summary id="class-single-title">Or add one course directly</summary><form id="class-single-form"><div id="class-single-fields" class="class-context-fields"></div><p><button class="button secondary" id="class-single-preview" type="submit">Review this record</button></p></form></details>
         </div>
         <section id="class-import-preview" hidden aria-labelledby="class-preview-title"><h3 id="class-preview-title">Review before saving</h3><p id="class-preview-counts"></p><div class="score-table-wrap" tabindex="0" aria-label="Import review"><table class="score-table"><thead><tr><th>Row</th><th>Action</th><th>Record</th><th>Review notes</th></tr></thead><tbody id="class-preview-rows"></tbody></table></div><p><button class="button primary" id="class-confirm-import" type="button">Confirm import</button></p></section>
-        <h3 id="class-records-title">Class courses</h3><p id="class-records-count" class="muted"></p><div class="score-table-wrap" tabindex="0" aria-label="Existing class records"><table class="score-table"><thead id="class-records-head"></thead><tbody id="class-records-rows"></tbody></table></div>
+        <h3 id="class-records-title">Class courses</h3><p id="class-records-count" class="muted"></p><label class="show-removed"><input id="class-show-removed" type="checkbox"> Show removed assignments (restore available)</label><div class="score-table-wrap" tabindex="0" aria-label="Existing class records"><table class="score-table"><thead id="class-records-head"></thead><tbody id="class-records-rows"></tbody></table></div>
         <p class="muted">Imports add new records and skip exact duplicates. Conflicts are shown for review; nothing is silently overwritten. Submitted score sheets and archive history remain unchanged.</p>
       </div>
     </section>
     <section class="score-panel" id="admin-history-panel" hidden aria-labelledby="history-title"><div class="section-heading"><div><h2 id="history-title">Submission history</h2><p>Archiving preserves the full score sheet and reopens that course. No records are deleted.</p></div><button id="admin-refresh" class="button secondary" type="button">Refresh history</button></div><label for="admin-search">Find a course, lecturer or session</label><input type="search" id="admin-search" placeholder="Search submission history"><div id="admin-history-list"></div></section>
   </main>
   <dialog id="archive-dialog" aria-labelledby="archive-title"><h2 id="archive-title">Archive and reopen?</h2><p id="archive-summary"></p><form id="archive-form"><label for="archive-reason">Reason for correction</label><textarea id="archive-reason" required minlength="5" maxlength="500"></textarea><p>The saved scores remain in history. The lecturer can submit a new version with a new PIN.</p><div class="dialog-actions"><button id="cancel-archive" class="button secondary" type="button">Cancel</button><button id="confirm-archive" class="button primary" type="submit">Archive and reopen</button></div></form></dialog>
+  <dialog id="assignment-dialog" aria-labelledby="assignment-title"><h2 id="assignment-title">Correct assignment</h2><p id="assignment-summary"></p><form id="assignment-form"><label for="assignment-reason">Reason for correction</label><textarea id="assignment-reason" required minlength="5" maxlength="500"></textarea><p>Removal preserves the original record and can be undone with Restore. Corrections are blocked when submitted score sheets exist.</p><p id="assignment-error" role="status"></p><div class="dialog-actions"><button class="button secondary" id="assignment-cancel" type="button">Cancel</button><button class="button primary" id="assignment-save" type="submit">Confirm correction</button></div></form></dialog>
 </body>
 </html>

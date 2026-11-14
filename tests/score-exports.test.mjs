@@ -11,9 +11,13 @@ autoTable.applyPlugin(jspdf.jsPDF);
 let name='',saved;
 class TestURL extends URL{static createObjectURL(blob){saved=blob;return 'blob:test';}static revokeObjectURL(){}}
 const scope=vm.createContext({window:{jspdf,JSZip},document:{baseURI:'http://test/',createElement:()=>({set download(v){name=v;},set href(v){},click(){}})},URL:TestURL,fetch:async()=>({ok:true,arrayBuffer:async()=>fs.readFileSync(new URL('../assets/fonts/DejaVuSans.ttf',import.meta.url))}),Uint8Array,String,Blob,btoa,setTimeout:()=>0});
+vm.runInContext(fs.readFileSync(new URL('../js/score-order.js',import.meta.url),'utf8'),scope);
 vm.runInContext(fs.readFileSync(new URL('../js/score-exports.js',import.meta.url),'utf8'),scope);
 const snapshot={submissionId:'synthetic-test',version:1,submittedAt:'2026-11-13T00:00:00Z',lecturerName:'Demo Lecturer',examDate:'2026-11-12',course:{code:'TEST101',title:'A course for export validation',units:2,session:'2026/2027',programme:'BA',level:'100 Level',semester:'1'},students:Array.from({length:120},(_,i)=>({ref:'S'+i,matNo:'000'+i,name:i===0?'Ọlá Adéwálé':i===1?'=HYPERLINK("untrusted")':'Synthetic Student '+i,ca:25,exam:55,total:80,grade:'A'}))};
 Object.assign(snapshot.students[2],{source:'Lecturer added',registrationType:'Carry-over',reason:'Synthetic carry-over registration'});
+snapshot.students.reverse();
+assert.equal(scope.window.ScoreExports.rows(snapshot)[10][1],'0000');
+assert.equal(scope.window.ScoreExports.rows({...snapshot,course:{...snapshot.course,units:0}})[3][1],0);
 const output=path.join(os.tmpdir(),'rcm-score-export-qa');fs.mkdirSync(output,{recursive:true});
 await scope.window.ScoreExports.pdf(snapshot);
 assert.match(name,/\.pdf$/);assert.ok(saved.size>10000);const pdf=Buffer.from(await saved.arrayBuffer());assert.equal(pdf.subarray(0,4).toString(),'%PDF');fs.writeFileSync(path.join(output,'test.pdf'),pdf);

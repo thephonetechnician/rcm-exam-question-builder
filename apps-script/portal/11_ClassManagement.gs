@@ -1,5 +1,31 @@
 /* Class-based administration. Every route requires the score administrator token. */
 function scoreNorm_(v){return scoreText_(v).toLowerCase().replace(/\s+/g,' ');}
+function scoreStudentOrder_(a,b){
+  const av=scoreText_(a.matNo||a.MatNo),bv=scoreText_(b.matNo||b.MatNo);if(!av||!bv)return av?-1:bv?1:String(a.ref||a.StudentRef||'').localeCompare(String(b.ref||b.StudentRef||''));
+  const aa=av.toLowerCase().match(/\d+|\D+/g)||[],bb=bv.toLowerCase().match(/\d+|\D+/g)||[];
+  for(let i=0;i<Math.min(aa.length,bb.length);i++){let x=aa[i],y=bb[i];if(/^\d+$/.test(x)&&/^\d+$/.test(y)){x=x.replace(/^0+/,'')||'0';y=y.replace(/^0+/,'')||'0';if(x.length!==y.length)return x.length-y.length;}if(x!==y)return x<y?-1:1;}
+  return aa.length-bb.length||av.localeCompare(bv)||String(a.ref||a.StudentRef||'').localeCompare(String(b.ref||b.StudentRef||''));
+}
+function scoreCorrectionRows_(book){return book.getSheetByName('ScoreCorrections')?scoreRead_(book,'ScoreCorrections'):[];}
+function scoreAssignmentRemoved_(book,kind,classRef,ref,cache){const events=(cache||scoreCorrectionRows_(book)).filter(function(e){return e.Kind===kind&&e.EntityRef===ref&&(!classRef||e.ClassRef===classRef);});return Boolean(events.length&&events[events.length-1].Action==='Remove');}
+function scoreCorrectAssignment_(book,data){
+  return scoreLock_(function(){
+    const admin=scoreAdmin_(data.token),c=scoreClass_(book,scoreText_(data.classRef),true),kind=data.kind,ref=scoreText_(data.ref),action=data.change,reason=scoreText_(data.reason),operation=scoreText_(data.operationId);
+    if(!['courses','students'].includes(kind)||!['Remove','Restore'].includes(action)||reason.length<5||reason.length>500||!/^[a-z0-9-]{20,80}$/i.test(operation))throw new Error('Select an assignment and enter a correction reason (5–500 characters).');
+    if(!book.getSheetByName('ScoreCorrections'))throw new Error('Run setupScoreMvp_ to install correction history first.');
+    const events=scoreCorrectionRows_(book),previous=events.filter(function(e){return e.OperationID===operation;})[0];
+    if(previous){if(previous.ClassRef!==c.ClassRef||previous.Kind!==kind||previous.EntityRef!==ref||previous.Action!==action||previous.Reason!==reason)throw new Error('This retry differs from the original correction. Refresh the class.');return {success:true,replayed:true};}
+    const courses=scoreClassCourses_(book,c),courseRefs=courses.map(function(r){return r.CourseRef;});
+    if(kind==='courses'&&!courseRefs.includes(ref))throw new Error('Course is not assigned to this class.');
+    if(kind==='students'&&!scoreRead_(book,'ScoreClassEnrolments').some(function(e){return e.ClassRef===c.ClassRef&&e.StudentRef===ref;}))throw new Error('Student is not enrolled in this class.');
+    const submissions=scoreRead_(book,'ScoreSubmissions');
+    if(submissions.some(function(s){return kind==='courses'?s.CourseRef===ref:courseRefs.includes(s.CourseRef);}))throw new Error('Submitted score sheets exist for this assignment/class. This correction is blocked to protect history.');
+    const removed=scoreAssignmentRemoved_(book,kind,c.ClassRef,ref);
+    if(removed!==(data.expectedRemoved===true))throw new Error('This assignment changed. Refresh the class before correcting it.');
+    if(removed===(action==='Remove'))return {success:true,unchanged:true};
+    scoreAppend_(book,'ScoreCorrections',[[operation,new Date().toISOString(),c.ClassRef,kind,ref,action,admin.actor,reason]]);SpreadsheetApp.flush();return {success:true};
+  });
+}
 function scoreClassKey_(session,programme,level){return [session,programme,level].map(scoreNorm_).join('|');}
 function scoreEnsureClasses_(book){
   const existing=scoreRead_(book,'ScoreClasses'),keys=Object.create(null),rows=[];
@@ -16,12 +42,12 @@ function scoreClass_(book,ref,write){
 }
 function scoreClassCourses_(book,c){const key=scoreClassKey_(c.Session,c.Programme,c['Level/Set']);return scoreRead_(book,'ScoreCourses').filter(function(r){return scoreClassKey_(r.Session,r.Programme,r['Level/Set'])===key;});}
 function scoreClasses_(book){
-  const classes=scoreRead_(book,'ScoreClasses'),enrolments=scoreRead_(book,'ScoreClassEnrolments'),courses=scoreRead_(book,'ScoreCourses'),session=scoreConfig_(book).session;
-  return {success:true,session:session,classes:classes.map(function(c){return {ref:c.ClassRef,session:c.Session,programme:c.Programme,level:c['Level/Set'],editable:c.Session===session,studentCount:enrolments.filter(function(e){return e.ClassRef===c.ClassRef;}).length,courseCount:courses.filter(function(r){return scoreClassKey_(r.Session,r.Programme,r['Level/Set'])===scoreClassKey_(c.Session,c.Programme,c['Level/Set']);}).length};})};
+  const classes=scoreRead_(book,'ScoreClasses'),enrolments=scoreRead_(book,'ScoreClassEnrolments'),courses=scoreRead_(book,'ScoreCourses'),session=scoreConfig_(book).session,corrections=scoreCorrectionRows_(book);
+  return {success:true,session:session,classes:classes.map(function(c){return {ref:c.ClassRef,session:c.Session,programme:c.Programme,level:c['Level/Set'],editable:c.Session===session,studentCount:enrolments.filter(function(e){return e.ClassRef===c.ClassRef&&!scoreAssignmentRemoved_(book,'students',c.ClassRef,e.StudentRef,corrections);}).length,courseCount:courses.filter(function(r){return scoreClassKey_(r.Session,r.Programme,r['Level/Set'])===scoreClassKey_(c.Session,c.Programme,c['Level/Set'])&&!scoreAssignmentRemoved_(book,'courses',c.ClassRef,r.CourseRef,corrections);}).length};})};
 }
 function scoreClassDetails_(book,ref){
-  const c=scoreClass_(book,ref,false),students=scoreRead_(book,'ScoreStudents'),enrolments=scoreRead_(book,'ScoreClassEnrolments').filter(function(e){return e.ClassRef===ref;});
-  return {success:true,classInfo:{ref:c.ClassRef,session:c.Session,programme:c.Programme,level:c['Level/Set'],editable:c.Session===scoreConfig_(book).session},courses:scoreClassCourses_(book,c).map(scoreCourseObject_),students:enrolments.map(function(e){const s=students.filter(function(r){return r.StudentRef===e.StudentRef;})[0];if(!s)throw new Error('A class enrolment points to a missing student.');return {ref:s.StudentRef,name:s.Name,matNo:s.MatNo,admissionNo:s.AdmissionNo,status:s.Status};})};
+  const c=scoreClass_(book,ref,false),corrections=scoreCorrectionRows_(book),students=scoreRead_(book,'ScoreStudents'),enrolments=scoreRead_(book,'ScoreClassEnrolments').filter(function(e){return e.ClassRef===ref;});
+  return {success:true,classInfo:{ref:c.ClassRef,session:c.Session,programme:c.Programme,level:c['Level/Set'],editable:c.Session===scoreConfig_(book).session},courses:scoreClassCourses_(book,c).map(function(r){return Object.assign(scoreCourseObject_(r),{removed:scoreAssignmentRemoved_(book,'courses',c.ClassRef,r.CourseRef,corrections)});}),students:enrolments.map(function(e){const s=students.filter(function(r){return r.StudentRef===e.StudentRef;})[0];if(!s)throw new Error('A class enrolment points to a missing student.');return {ref:s.StudentRef,name:s.Name,matNo:s.MatNo,admissionNo:s.AdmissionNo,status:s.Status,removed:scoreAssignmentRemoved_(book,'students',c.ClassRef,s.StudentRef,corrections)};}).sort(scoreStudentOrder_)};
 }
 function scoreCreateClass_(book,data){
   return scoreLock_(function(){
@@ -42,20 +68,21 @@ function scoreImportPlan_(book,data){
   const semester=scoreText_(data.semester);
   if(kind==='courses'&&!['1','2','3'].includes(semester))throw new Error('Select semester 1, 2 or 3.');
   const existing=kind==='courses'?scoreClassCourses_(book,c):scoreRead_(book,'ScoreStudents');
-  const enrolments=scoreRead_(book,'ScoreClassEnrolments'),seen=Object.create(null),plan=[];
+  const corrections=scoreCorrectionRows_(book),enrolments=scoreRead_(book,'ScoreClassEnrolments'),seen=Object.create(null),plan=[];
   data.rows.forEach(function(raw,index){
     if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('Invalid import row.');
     const row=kind==='courses'?{CourseCode:scoreText_(raw.CourseCode).replace(/\s+/g,' '),Title:scoreText_(raw.Title),Units:scoreText_(raw.Units)}:{Name:scoreText_(raw.Name).replace(/\s+/g,' '),MatNo:scoreText_(raw.MatNo),AdmissionNo:scoreText_(raw.AdmissionNo)};
     if(Object.values(row).some(function(v){return v.length>250;}))throw new Error('Import fields must be 250 characters or fewer.');
     const result={row:Number.isInteger(raw._row)&&raw._row>=2&&raw._row<=1048576?raw._row:index+2,status:'Add',message:'',values:row};
     if(kind==='courses'){
-      if(!row.CourseCode||!row.Title||!row.Units||!Number.isFinite(Number(row.Units))||Number(row.Units)<=0||Number(row.Units)>30){result.status='Conflict';result.message='Course code, title and units (greater than 0, up to 30) are required.';}
+      if(!row.CourseCode||!row.Title||row.Units===''||!Number.isFinite(Number(row.Units))||Number(row.Units)<0||Number(row.Units)>30){result.status='Conflict';result.message='Course code, title and units (0–30) are required. Zero-credit courses are allowed.';}
       const key=scoreNorm_(row.CourseCode)+'|'+semester,signature=JSON.stringify([scoreNorm_(row.Title),Number(row.Units)]);
       if(result.status!=='Conflict'&&seen[key]){result.status=seen[key]===signature?'Skip':'Conflict';result.message=result.status==='Skip'?'Exact duplicate within this upload.':'Conflicting course rows in this upload.';}
       seen[key]=signature;
       const found=existing.filter(function(r){return scoreNorm_(r.CourseCode)===scoreNorm_(row.CourseCode)&&scoreText_(r.Semester)===semester;});
       if(result.status==='Add'&&found.length){if(found.length===1&&scoreNorm_(found[0].Title)===scoreNorm_(row.Title)&&Number(found[0].Units)===Number(row.Units)){result.status='Skip';result.message='Course already exists unchanged.';}else{result.status='Conflict';result.message='Existing course details differ. Nothing will be overwritten.';}}
       result.ref='C_'+scoreHash_(c.ClassRef+'|'+key).slice(0,24);
+      if(found[0]&&scoreAssignmentRemoved_(book,'courses',c.ClassRef,found[0].CourseRef,corrections)){result.status='Conflict';result.message='This course was removed. Use Restore deliberately instead of re-importing it.';}
     }else{
       if(!row.Name||(!row.MatNo&&!row.AdmissionNo)){result.status='Conflict';result.message='Student name and either matric number or admission number are required.';}
       const key=row.MatNo?'mat:'+scoreNorm_(row.MatNo):'adm:'+scoreNorm_(row.AdmissionNo),signature=JSON.stringify([scoreNorm_(row.Name),scoreNorm_(row.MatNo),scoreNorm_(row.AdmissionNo)]);
@@ -69,6 +96,7 @@ function scoreImportPlan_(book,data){
         else {result.ref=found[0].StudentRef;result.newStudent=false;if(enrolments.some(function(e){return e.ClassRef===c.ClassRef&&e.StudentRef===result.ref;})){result.status='Skip';result.message='Student already enrolled in this class.';}else result.message='Enrol existing student in this session/class; keep the master record unchanged.';}
       }
       if(!result.ref){result.ref='S_'+scoreHash_(key).slice(0,24);result.newStudent=true;}
+      if(scoreAssignmentRemoved_(book,'students',c.ClassRef,result.ref,corrections)){result.status='Conflict';result.message='This enrolment was removed. Use Restore deliberately instead of re-importing it.';}
       // Catch admission-number-only duplicates crossing matric-based rows in the same file.
       for(let prior=0;prior<plan.length;prior++){
         const p=plan[prior].values;
@@ -118,6 +146,7 @@ function scoreClassRoute_(book,data){
     case 'score.admin.classes':return scoreClasses_(book);
     case 'score.admin.class.create':return scoreCreateClass_(book,data);
     case 'score.admin.class.details':return scoreClassDetails_(book,scoreText_(data.classRef));
+    case 'score.admin.class.assignment':return scoreCorrectAssignment_(book,data);
     case 'score.admin.import.preview':return scoreImportPlan_(book,data);
     case 'score.admin.import.commit':return scoreCommitImport_(book,data);
     default:throw new Error('Unknown class administration action.');

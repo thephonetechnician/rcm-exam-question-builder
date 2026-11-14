@@ -10,7 +10,8 @@ const SCORE_TABLES_ = {
   ScoreHistory: ['EventID','Timestamp','SubmissionID','CourseRef','Action','Actor','Reason'],
   ScoreClasses: ['ClassRef','Session','Programme','Level/Set'],
   ScoreClassEnrolments: ['ClassRef','StudentRef'],
-  ScoreAdditions: ['SubmissionID','StudentRef','MatNo','Name','RegistrationType','Reason','AddedBy','AddedAt','ReviewStatus']
+  ScoreAdditions: ['SubmissionID','StudentRef','MatNo','Name','RegistrationType','Reason','AddedBy','AddedAt','ReviewStatus'],
+  ScoreCorrections: ['OperationID','Timestamp','ClassRef','Kind','EntityRef','Action','Actor','Reason']
 };
 function scoreText_(v) { return String(v === null || v === undefined ? '' : v).trim(); }
 function scoreHash_(v) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(v), Utilities.Charset.UTF_8).map(function(b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join(''); }
@@ -59,27 +60,29 @@ function scoreCourse_(book,ref) {
   const rows=scoreRead_(book,'ScoreCourses').filter(function(c){return scoreText_(c.CourseRef)===ref;});
   if(rows.length!==1) throw new Error('Course not found or its reference is duplicated.');
   const c=scoreCourseObject_(rows[0]),cfg=scoreConfig_(book);
+  if(scoreAssignmentRemoved_(book,'courses','',ref))throw new Error('This course assignment was removed by the administrator.');
   if(c.session!==cfg.session) throw new Error('This course is not in the active academic session.');
-  if(!/^[A-Za-z0-9_-]{1,100}$/.test(c.ref)||!c.code||!c.title||!c.programme||!c.level||!c.semester||!Number.isFinite(c.units)||c.units<=0) throw new Error('The course metadata is incomplete. Contact the administrator.');
+  if(!/^[A-Za-z0-9_-]{1,100}$/.test(c.ref)||!c.code||!c.title||!c.programme||!c.level||!c.semester||scoreText_(rows[0].Units)===''||!Number.isFinite(c.units)||c.units<0) throw new Error('The course metadata is incomplete. Contact the administrator.');
   return c;
 }
 function scoreRoster_(book,ref) {
   const students=scoreRead_(book,'ScoreStudents'),regs=scoreRead_(book,'ScoreRegistrations').filter(function(r){return scoreText_(r.CourseRef)===ref;}),seen=Object.create(null);
-  const ids=[];
+  const ids=[],corrections=scoreCorrectionRows_(book);let rosterClassRef='';
   regs.forEach(function(r){const id=scoreText_(r.StudentRef);if(!id||seen[id])throw new Error('Missing or duplicate student registration. Contact the administrator.');seen[id]=true;ids.push(id);});
   if(book.getSheetByName('ScoreClasses')&&book.getSheetByName('ScoreClassEnrolments')){
     const course=scoreCourse_(book,ref),norm=function(v){return scoreText_(v).toLowerCase().replace(/\s+/g,' ');};
     const classes=scoreRead_(book,'ScoreClasses').filter(function(c){return norm(c.Session)===norm(course.session)&&norm(c.Programme)===norm(course.programme)&&norm(c['Level/Set'])===norm(course.level);});
     if(classes.length>1)throw new Error('Duplicate class records. Contact the administrator.');
+    if(classes[0])rosterClassRef=classes[0].ClassRef;
     if(classes[0])scoreRead_(book,'ScoreClassEnrolments').filter(function(e){return e.ClassRef===classes[0].ClassRef;}).forEach(function(e){const id=scoreText_(e.StudentRef);if(!seen[id]){seen[id]=true;ids.push(id);}});
   }
-  const roster=ids.map(function(id){
+  const roster=ids.filter(function(id){return !rosterClassRef||!scoreAssignmentRemoved_(book,'students',rosterClassRef,id,corrections);}).map(function(id){
     const found=students.filter(function(s){return scoreText_(s.StudentRef)===id;});
     if(found.length!==1) throw new Error('Student reference missing or duplicated: '+id);
     const s=found[0];if(scoreText_(s.Status)!=='Active')return null;
     if(!scoreText_(s.Name))throw new Error('A registered student has no name.');
     return {ref:id,matNo:scoreText_(s.MatNo),name:scoreText_(s.Name)};
-  }).filter(Boolean).sort(function(a,b){return a.ref.localeCompare(b.ref);});
+  }).filter(Boolean).sort(scoreStudentOrder_);
   const matric={};roster.forEach(function(s){if(s.matNo&&matric[s.matNo])throw new Error('Duplicate matric number in this roster.');if(s.matNo)matric[s.matNo]=true;});
   if(roster.length>1000)throw new Error('This roster exceeds the first-release limit of 1,000 students.');
   return roster;
@@ -88,8 +91,8 @@ function scoreRevision_(course,students,cfg) {return scoreHash_(JSON.stringify({
 function scoreCatalogue_(book) {
   const cfg=scoreConfig_(book),submissions=scoreRead_(book,'ScoreSubmissions'),events=scoreRead_(book,'ScoreHistory');
   const archived={};events.forEach(function(e){if(e.Action==='Archived')archived[e.SubmissionID]=true;});
-  const refs={};
-  const courses=scoreRead_(book,'ScoreCourses').filter(function(c){return scoreText_(c.Session)===cfg.session;}).map(function(r){
+  const refs={},corrections=scoreCorrectionRows_(book);
+  const courses=scoreRead_(book,'ScoreCourses').filter(function(c){return scoreText_(c.Session)===cfg.session&&!scoreAssignmentRemoved_(book,'courses','',c.CourseRef,corrections);}).map(function(r){
     const c=scoreCourseObject_(r);if(!c.ref||refs[c.ref])throw new Error('Missing or duplicate CourseRef in ScoreCourses.');refs[c.ref]=true;
     const versions=submissions.filter(function(s){return s.CourseRef===c.ref;}).sort(function(a,b){return Number(b.Version)-Number(a.Version);});
     c.locked=Boolean(versions[0]&&!archived[versions[0].SubmissionID]);return c;
@@ -119,7 +122,7 @@ function scoreSubmit_(book,data) {
     const registered=scoreRoster_(book,ref);
     if(data.revision!==scoreRevision_(course,registered,cfg))throw new Error('The course, roster or marking settings changed. Reload the course and review the scores.');
     const additions=scoreValidateAdditions_(book,data.additions||[],registered);
-    const students=registered.concat(additions);
+    const students=registered.concat(additions).sort(scoreStudentOrder_);
     if(!students.length||students.length>1000)throw new Error('Submit between 1 and 1,000 students.');
     const lecturer=scoreText_(data.lecturerName);if(lecturer.length<2||lecturer.length>150)throw new Error('Enter the lecturer’s full name (2–150 characters).');
     const date=scoreText_(data.examDate),parsed=new Date(date+'T12:00:00Z');

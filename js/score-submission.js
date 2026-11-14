@@ -44,6 +44,10 @@
     }
     $('entry-progress').textContent = `${completed} of ${fields.size} completed`;
   }
+  function orderRows(){
+    current.students.sort(window.ScoreOrder.compare);
+    current.students.forEach((s,index)=>{const row=fields.get(s.ref).row;row.cells[0].textContent=String(index+1);$('score-rows').append(row);});
+  }
   function showEntry() {
     const {config,students} = current;
     fields.clear();manualStudents.clear(); $('score-entry-form').reset();
@@ -73,7 +77,7 @@
         input.type='number'; input.inputMode='decimal'; input.min='0'; input.max=String(max); input.step='0.01'; input.required=true; input.placeholder=' '; input.setAttribute('aria-label',`${key === 'ca' ? 'CA' : 'Exam'} for ${s.name}`);
         input.addEventListener('input',()=>{dirty=true;pending=null;updateProgress();}); td.append(input); tr.append(td); inputs[key]=input;
       }
-      const total=document.createElement('td'); total.className='score-total'; total.textContent='—';tr.append(total); fields.set(s.ref,{...inputs,total}); return tr;
+      const total=document.createElement('td'); total.className='score-total'; total.textContent='—';tr.append(total); fields.set(s.ref,{...inputs,total,row:tr}); return tr;
   }
   async function loadCourse(ref) {
     if (submitting) return;
@@ -134,7 +138,7 @@
     if(current.students.length>=1000||manualStudents.size>=100){$('added-error').textContent='This score sheet has reached its student limit.';return;}
     if(current.students.some(s=>s.matNo&&norm(s.matNo)===norm(matNo))){$('added-error').textContent='That matric number is already on this score sheet.';return;}
     const student={ref:'M_'+crypto.randomUUID(),name,matNo,registrationType:$('added-type').value,reason,source:'Lecturer added'};
-    current.students.push(student);manualStudents.set(student.ref,student);$('score-rows').append(scoreRow(student,current.students.length-1));dirty=true;pending=null;updateProgress();$('add-student-dialog').close();fields.get(student.ref).ca.focus();
+    current.students.push(student);manualStudents.set(student.ref,student);$('score-rows').append(scoreRow(student,current.students.length-1));orderRows();dirty=true;pending=null;updateProgress();$('add-student-dialog').close();fields.get(student.ref).ca.focus();
   });
   $('confirm-submit').addEventListener('click',()=>busy($('confirm-submit'),'Submitting…',async()=>{
     if(submitting||!pending)return; submitting=true; $('cancel-submit').disabled=true;

@@ -56,6 +56,9 @@ small { color: var(--muted); font-size: 11px; }
 .admin-submission button { margin: 12px 8px 0 0; }
 textarea { font: inherit; width: 100%; border: 1px solid #ced6e2; border-radius: 7px; padding: 12px; min-height: 90px; }
 select { width: 100%; font: inherit; padding: 12px; min-height: 46px; border: 1px solid #ced6e2; border-radius: 7px; background: white; color: var(--ink); }
+.show-removed { display: flex; align-items: center; gap: 10px; margin: 15px 0; }
+.show-removed input { width: 18px; height: 18px; }
+#assignment-error { color: #a12638; }
 .class-context-fields { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
 .class-create { padding: 16px 0; border-bottom: 1px solid var(--line); margin: 14px 0; }
 .class-create summary { cursor: pointer; color: var(--maroon); font-size: 13px; font-weight: 700; padding: 8px 0; }
