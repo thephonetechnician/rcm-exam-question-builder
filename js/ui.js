@@ -549,4 +549,5 @@
     document.getElementById("rea-panel-saved").style.display = state.tab === "saved" ? "" : "none";
     if (state.tab === "new") renderNewPanel();
     else renderSavedPanel();
+    if (window.ExamPreview) window.ExamPreview.refresh();
   }

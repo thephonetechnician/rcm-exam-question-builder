@@ -1,5 +1,20 @@
 # Portal checkpoint — 15 November 2026
 
+## Question Builder live preview
+
+The builder now has a polished editor and a local live paper preview derived from
+the existing Word XML. Desktop shows both side by side; tablet/mobile use Edit
+paper / Paper preview. Fit width and Actual size are available. Theory marks and
+subparts, objective options, gap insertion and mixed section ordering were checked
+in the browser with synthetic text. HTML-like input remains text; PINs are excluded.
+The preview is continuous A4-width content, not exact Word pagination.
+
+Existing test suite, JavaScript syntax and diff checks pass. No backend, save/PIN
+logic or Word generation code changed. Sync `exam-builder.html`, `js/ui.js`,
+`js/exam-preview.js` and `css/builder-workspace.css` through the usual Git workflow.
+No Apps Script deployment is required for this frontend update. Changes remain
+local pending the user's Git sync. Design notes: design-system/rcm-academic-portal/pages/exam-builder.md.
+
 ## Bulk assignment corrections and same-session transfers
 
 Local admin lists now support row checkboxes, select all visible records and bulk
