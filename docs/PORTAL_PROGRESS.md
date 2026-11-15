@@ -1,5 +1,30 @@
 # Portal checkpoint — 15 November 2026
 
+## Download-format troubleshooting and versioned assets
+
+User reported spacing/Marks/signatures missing from real downloads. Inspection of
+two recent downloaded DOCX files confirmed old formatter output. Their stated URL
+is http://127.0.0.1:8000/index.html. Local port 8000 is owned by VS Code (forwarded
+Codespace), and its HTML does not yet contain these new versioned references.
+It is not serving the just-edited Windows checkout. Cache or mixed script versions
+remain the likely reason for the prior old-format output; no real records changed.
+
+exam-builder.html now versions all builder script URLs as 2026-11-15.2, uses the
+bundled JSZip and shows an updated-format note. The generator exposes a matching
+format version; shared new/saved download preparation rejects a mismatched formatter
+and preserves the clicked signature option while saved-paper retrieval is pending.
+
+Both actual browser download routes were exercised with tests/preview-exam.mjs,
+which replaces all exam storage/PIN calls with synthetic local fixtures. The saved
+route uses synthetic prompt input in that test fixture. The downloaded DOCX files
+from Generate and Saved submissions were opened as ZIPs and verified for 1.2 spacing,
+capitalised Marks, RCM Examiner and Head of Department. All tests pass, including
+exam-download-ui.test.mjs for script versions, guards and immutable saved records.
+
+Pending: user commits/pushes the Windows fix, pulls in Codespaces, then hard-refreshes
+the port-8000 builder. No Apps Script update is required. Test screenshots and
+synthetic downloads are outside the repo; actual exam content was never committed.
+
 ## Aurora Academic redesign and night mode
 
 The user's new direction replaces the visible minimal theme with an expressive

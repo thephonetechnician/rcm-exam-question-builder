@@ -416,6 +416,14 @@
     return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
+  function examDownloadData(paper, signatures = document.getElementById('builder-signatures')?.checked === true) {
+    const expected = document.documentElement.dataset.examRelease;
+    if (expected && (typeof EXAM_FORMAT_VERSION === 'undefined' || EXAM_FORMAT_VERSION !== expected)) {
+      throw new Error('The paper formatter needs to refresh. Reload this page with Ctrl+Shift+R before downloading.');
+    }
+    return submissionToDocData({...paper, includeSignatureLines: signatures});
+  }
+
   async function onGenerate() {
     const f = state.form;
     const errs = validate(f);
@@ -430,7 +438,7 @@
     const btn = document.getElementById("rea-generate");
     btn.disabled = true; btn.textContent = "Generating…";
     try {
-      const docData = submissionToDocData({...f, includeSignatureLines: document.getElementById('builder-signatures')?.checked === true});
+      const docData = examDownloadData(f);
       const blob = await generateDocx(docData);
       const filename = `${(f.courseCode || "Exam").replace(/\s+/g, "_")}_Exam_Questions.docx`;
       downloadBlob(blob, filename);
@@ -507,12 +515,13 @@
         const pin = prompt("Enter the lecturer PIN or exam office master PIN:");
         if (pin === null) return;
         const button = e.currentTarget;
+        const signatures = document.getElementById('builder-signatures')?.checked === true;
         button.disabled = true;
         button.textContent = "Checking…";
         try {
           const result = await getSavedPaper(rec.id, pin);
           const paper = result.paper;
-          const blob = await generateDocx(submissionToDocData({...paper, includeSignatureLines: document.getElementById('builder-signatures')?.checked === true}));
+          const blob = await generateDocx(examDownloadData(paper, signatures));
           const filename = `${String(paper.courseCode || "Exam").replace(/\s+/g, "_")}_Exam_Questions.docx`;
           downloadBlob(blob, filename);
         } catch (error) {

@@ -1,4 +1,5 @@
 // ---------------- XML / docx generation ----------------
+  const EXAM_FORMAT_VERSION = '2026-11-15.2';
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
