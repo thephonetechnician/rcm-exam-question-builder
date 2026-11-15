@@ -59,6 +59,10 @@ select { width: 100%; font: inherit; padding: 12px; min-height: 46px; border: 1p
 .show-removed { display: flex; align-items: center; gap: 10px; margin: 15px 0; }
 .show-removed input { width: 18px; height: 18px; }
 #assignment-error { color: #a12638; }
+.bulk-assignment-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 0; }
+.bulk-assignment-bar span { color: var(--muted); font-size: 12px; }
+.score-table .record-select { width: 20px; height: 20px; padding: 0; }
+.batch-record-list { max-height: 180px; overflow: auto; background: #f5f7fa; border-radius: 8px; padding: 16px 16px 16px 36px; font-size: 13px; }
 .class-context-fields { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
 .class-create { padding: 16px 0; border-bottom: 1px solid var(--line); margin: 14px 0; }
 .class-create summary { cursor: pointer; color: var(--maroon); font-size: 13px; font-weight: 700; padding: 8px 0; }

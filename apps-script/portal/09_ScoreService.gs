@@ -11,7 +11,9 @@ const SCORE_TABLES_ = {
   ScoreClasses: ['ClassRef','Session','Programme','Level/Set'],
   ScoreClassEnrolments: ['ClassRef','StudentRef'],
   ScoreAdditions: ['SubmissionID','StudentRef','MatNo','Name','RegistrationType','Reason','AddedBy','AddedAt','ReviewStatus'],
-  ScoreCorrections: ['OperationID','Timestamp','ClassRef','Kind','EntityRef','Action','Actor','Reason']
+  ScoreCorrections: ['OperationID','Timestamp','ClassRef','Kind','EntityRef','Action','Actor','Reason'],
+  ScoreAssignmentBatches: ['OperationID','BatchID','Timestamp','Actor','Reason','PayloadHash','ChangeCount','Mode'],
+  ScoreAssignmentChanges: ['BatchID','Kind','ClassRef','EntityRef','Action']
 };
 function scoreText_(v) { return String(v === null || v === undefined ? '' : v).trim(); }
 function scoreHash_(v) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(v), Utilities.Charset.UTF_8).map(function(b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join(''); }
@@ -74,7 +76,7 @@ function scoreRoster_(book,ref) {
     const classes=scoreRead_(book,'ScoreClasses').filter(function(c){return norm(c.Session)===norm(course.session)&&norm(c.Programme)===norm(course.programme)&&norm(c['Level/Set'])===norm(course.level);});
     if(classes.length>1)throw new Error('Duplicate class records. Contact the administrator.');
     if(classes[0])rosterClassRef=classes[0].ClassRef;
-    if(classes[0])scoreRead_(book,'ScoreClassEnrolments').filter(function(e){return e.ClassRef===classes[0].ClassRef;}).forEach(function(e){const id=scoreText_(e.StudentRef);if(!seen[id]){seen[id]=true;ids.push(id);}});
+    if(classes[0])scoreEnrolments_(book,corrections).filter(function(e){return e.ClassRef===classes[0].ClassRef;}).forEach(function(e){const id=scoreText_(e.StudentRef);if(!seen[id]){seen[id]=true;ids.push(id);}});
   }
   const roster=ids.filter(function(id){return !rosterClassRef||!scoreAssignmentRemoved_(book,'students',rosterClassRef,id,corrections);}).map(function(id){
     const found=students.filter(function(s){return scoreText_(s.StudentRef)===id;});

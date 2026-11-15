@@ -1,0 +1,52 @@
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {createScoreHarness} from './helpers/score-harness.mjs';
+const h=createScoreHarness(),{context,props,sheets,controls}=h;context.setupScoreMvp_();
+props.set('SCORE_ADMIN_KEY','SYNTHETIC-BULK-ADMIN-KEY-ONLY');context.configureScoreAdmin_();
+const call=d=>context.scoreRoute_(d),token=call({action:'score.admin.login',key:'SYNTHETIC-BULK-ADMIN-KEY-ONLY'}).token,admin=d=>call({...d,token});
+const create=level=>admin({action:'score.admin.class.create',session:'2026/2027',programme:'BA',level}).classRef;
+const source=create('100 Level'),target=create('200 Level');
+function add(ref,kind,rows){const p=admin({action:'score.admin.import.preview',classRef:ref,kind,semester:'1',rows});return admin({action:'score.admin.import.commit',classRef:ref,kind,semester:'1',rows,revision:p.revision});}
+add(source,'courses',[{CourseCode:'C101',Title:'Course One',Units:0},{CourseCode:'C102',Title:'Course Two',Units:2}]);
+add(target,'courses',[{CourseCode:'C201',Title:'Destination Course',Units:3}]);
+add(source,'students',[{Name:'Student One',MatNo:'0001'},{Name:'Student Two',MatNo:'0002'},{Name:'Student Three',MatNo:'0003'}]);
+const details=ref=>admin({action:'score.admin.class.details',classRef:ref}),active=ref=>details(ref).students.filter(s=>!s.removed),refs=active(source).map(s=>s.ref);
+const request=(mode,kind,ids)=>({action:'score.admin.class.batch',classRef:source,targetClassRef:target,kind,mode,refs:ids,operationId:randomUUID(),reason:'Correct mistaken class registration'});
+assert.throws(()=>call({...request('remove','students',refs),token:'forged'}),/Administrator session/);
+assert.throws(()=>admin(request('remove','students',[refs[0],refs[0]])),/distinct/);
+assert.throws(()=>admin({...request('transfer','students',[refs[0]]),targetClassRef:source}),/different class/);
+assert.throws(()=>admin(request('remove','students',[refs[0],'NOT-IN-CLASS'])),/no longer active/);
+assert.equal(active(source).length,3);assert.equal(sheets.get('ScoreAssignmentBatches').data.length,1);
+const masterBefore=JSON.stringify(sheets.get('ScoreStudents').data);
+let batch=request('transfer','students',refs.slice(0,2));
+controls.failTable='ScoreAssignmentBatches';assert.throws(()=>admin(batch),/write interruption/);
+assert.equal(active(source).length,3);assert.equal(active(target).length,0); // Orphan change rows are invisible.
+const result=admin(batch);assert.equal(result.changed,2);assert.equal(active(source).length,1);assert.equal(active(target).length,2);
+assert.equal(JSON.stringify(sheets.get('ScoreStudents').data),masterBefore);
+assert.equal(admin(batch).replayed,true);assert.equal(active(target).length,2);
+assert.throws(()=>admin({...batch,reason:'Changed retry reason'}),/differs/);
+const srcCourse=details(source).courses[0],dstCourse=details(target).courses[0];
+assert.equal(call({action:'score.course',courseRef:srcCourse.ref}).students.length,1);
+assert.deepEqual(Array.from(call({action:'score.course',courseRef:dstCourse.ref}).students,s=>s.matNo),['0001','0002']);
+assert.throws(()=>admin({action:'score.admin.class.assignment',classRef:source,kind:'students',ref:refs[0],change:'Restore',expectedRemoved:true,operationId:randomUUID(),reason:'Try wrong undo'}),/Transfer them back/);
+const reverse={...request('transfer','students',refs.slice(0,2)),classRef:target,targetClassRef:source};admin(reverse);
+assert.equal(active(source).length,3);assert.equal(active(target).length,0);
+admin(batch);assert.equal(active(source).length,3); // Old retry never replays the move after reversal.
+const removed=request('remove','students',refs.slice(0,2));admin(removed);assert.equal(active(source).length,1);
+for(const ref of refs.slice(0,2))admin({action:'score.admin.class.assignment',classRef:source,kind:'students',ref,change:'Restore',expectedRemoved:true,operationId:randomUUID(),reason:'Undo bulk removal'});
+assert.equal(active(source).length,3);admin(removed);assert.equal(active(source).length,3);
+const courseRefs=details(source).courses.map(c=>c.ref);admin(request('remove','courses',courseRefs));assert.ok(details(source).courses.every(c=>c.removed));
+for(const ref of courseRefs)admin({action:'score.admin.class.assignment',classRef:source,kind:'courses',ref,change:'Restore',expectedRemoved:true,operationId:randomUUID(),reason:'Restore test courses'});
+assert.equal(call({action:'score.catalogue'}).courses.length,3);
+const loaded=call({action:'score.course',courseRef:srcCourse.ref});
+call({action:'score.submit',courseRef:srcCourse.ref,operationId:randomUUID(),revision:loaded.revision,lecturerName:'Synthetic Lecturer',examDate:'2026-01-01',pin:'SYNTHETIC-PIN-ONLY',entries:loaded.students.map(s=>({studentRef:s.ref,ca:20,exam:50}))});
+const count=sheets.get('ScoreAssignmentBatches').data.length;
+assert.throws(()=>admin(request('remove','courses',courseRefs)),/Submitted/); // One blocked record blocks the entire batch.
+assert.equal(details(source).courses[1].removed,false);
+assert.throws(()=>admin(request('transfer','students',[refs[0]])),/Submitted/);
+add(target,'students',[{Name:'Other Student',MatNo:'0200'}]);
+const otherRef=active(target)[0].ref;
+assert.throws(()=>admin({...request('transfer','students',[otherRef]),classRef:target,targetClassRef:source}),/destination class has submitted/);
+assert.equal(sheets.get('ScoreAssignmentBatches').data.length,count);
+assert.equal(active(target).length,1);assert.equal(call({action:'score.download',courseRef:srcCourse.ref,pin:'SYNTHETIC-PIN-ONLY'}).snapshot.students.length,3);
+console.log('PASS: bulk selection validation, all-or-nothing removals/transfers, interrupted-write recovery, safe retries/reversal, unchanged identities and submitted-score guards.');

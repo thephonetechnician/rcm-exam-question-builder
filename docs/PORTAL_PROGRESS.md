@@ -1,4 +1,17 @@
-# Portal checkpoint — 14 November 2026
+# Portal checkpoint — 15 November 2026
+
+## Bulk assignment corrections and same-session transfers
+
+Local admin lists now support row checkboxes, select all visible records and bulk
+removal of students or courses. Selected students can transfer to an existing class
+in the same active session to correct mistakes. Matric numbers and score snapshots
+are preserved; source/destination submitted scores block transfers. Batch commit
+markers prevent partial visibility after interrupted writes, with idempotent retries.
+
+All checks pass via `node tests/run-all.mjs`; syntax and diff checks pass. Synthetic
+browser checks confirmed transfers and student/course removal. No live data was
+used or changed. These changes are local and awaiting manual Git sync and Apps
+Script setup/deployment. Follow `docs/BULK_CLASS_CORRECTIONS.md` for installation.
 
 ## Assignment corrections, ordering and zero-credit courses
 

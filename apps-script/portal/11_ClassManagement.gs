@@ -6,7 +6,17 @@ function scoreStudentOrder_(a,b){
   for(let i=0;i<Math.min(aa.length,bb.length);i++){let x=aa[i],y=bb[i];if(/^\d+$/.test(x)&&/^\d+$/.test(y)){x=x.replace(/^0+/,'')||'0';y=y.replace(/^0+/,'')||'0';if(x.length!==y.length)return x.length-y.length;}if(x!==y)return x<y?-1:1;}
   return aa.length-bb.length||av.localeCompare(bv)||String(a.ref||a.StudentRef||'').localeCompare(String(b.ref||b.StudentRef||''));
 }
-function scoreCorrectionRows_(book){return book.getSheetByName('ScoreCorrections')?scoreRead_(book,'ScoreCorrections'):[];}
+function scoreCorrectionRows_(book){
+  const legacy=book.getSheetByName('ScoreCorrections')?scoreRead_(book,'ScoreCorrections'):[];
+  const batches=typeof scoreBatchCorrectionRows_==='function'?scoreBatchCorrectionRows_(book):[];
+  if(typeof scoreBatchCorrectionRows_!=='function'&&book.getSheetByName('ScoreAssignmentBatches')&&scoreRead_(book,'ScoreAssignmentBatches').length)throw new Error('Install 12_BulkAssignments before reading class assignments.');
+  return legacy.concat(batches).sort(function(a,b){return String(a.Timestamp).localeCompare(String(b.Timestamp));});
+}
+function scoreCorrectionTime_(events){let latest=Date.now()-1;events.forEach(function(e){const n=Date.parse(e.Timestamp);if(Number.isFinite(n))latest=Math.max(latest,n);});return new Date(latest+1).toISOString();}
+function scoreEnrolments_(book,corrections){
+  const rows=scoreRead_(book,'ScoreClassEnrolments').slice(),seen=Object.create(null);rows.forEach(function(e){seen[e.ClassRef+'|'+e.StudentRef]=true;});
+  (corrections||scoreCorrectionRows_(book)).forEach(function(e){if(e.Kind==='students'&&e.Action==='Restore'&&!seen[e.ClassRef+'|'+e.EntityRef]){seen[e.ClassRef+'|'+e.EntityRef]=true;rows.push({ClassRef:e.ClassRef,StudentRef:e.EntityRef});}});return rows;
+}
 function scoreAssignmentRemoved_(book,kind,classRef,ref,cache){const events=(cache||scoreCorrectionRows_(book)).filter(function(e){return e.Kind===kind&&e.EntityRef===ref&&(!classRef||e.ClassRef===classRef);});return Boolean(events.length&&events[events.length-1].Action==='Remove');}
 function scoreCorrectAssignment_(book,data){
   return scoreLock_(function(){
@@ -17,13 +27,15 @@ function scoreCorrectAssignment_(book,data){
     if(previous){if(previous.ClassRef!==c.ClassRef||previous.Kind!==kind||previous.EntityRef!==ref||previous.Action!==action||previous.Reason!==reason)throw new Error('This retry differs from the original correction. Refresh the class.');return {success:true,replayed:true};}
     const courses=scoreClassCourses_(book,c),courseRefs=courses.map(function(r){return r.CourseRef;});
     if(kind==='courses'&&!courseRefs.includes(ref))throw new Error('Course is not assigned to this class.');
-    if(kind==='students'&&!scoreRead_(book,'ScoreClassEnrolments').some(function(e){return e.ClassRef===c.ClassRef&&e.StudentRef===ref;}))throw new Error('Student is not enrolled in this class.');
+    if(kind==='students'&&!scoreEnrolments_(book,events).some(function(e){return e.ClassRef===c.ClassRef&&e.StudentRef===ref;}))throw new Error('Student is not enrolled in this class.');
     const submissions=scoreRead_(book,'ScoreSubmissions');
     if(submissions.some(function(s){return kind==='courses'?s.CourseRef===ref:courseRefs.includes(s.CourseRef);}))throw new Error('Submitted score sheets exist for this assignment/class. This correction is blocked to protect history.');
     const removed=scoreAssignmentRemoved_(book,kind,c.ClassRef,ref);
+    const last=events.filter(function(e){return e.Kind===kind&&e.ClassRef===c.ClassRef&&e.EntityRef===ref;}).slice(-1)[0];
+    if(kind==='students'&&action==='Restore'&&last&&last.Mode==='transfer')throw new Error('This student was transferred. Transfer them back from the destination class to reverse that correction.');
     if(removed!==(data.expectedRemoved===true))throw new Error('This assignment changed. Refresh the class before correcting it.');
     if(removed===(action==='Remove'))return {success:true,unchanged:true};
-    scoreAppend_(book,'ScoreCorrections',[[operation,new Date().toISOString(),c.ClassRef,kind,ref,action,admin.actor,reason]]);SpreadsheetApp.flush();return {success:true};
+    scoreAppend_(book,'ScoreCorrections',[[operation,scoreCorrectionTime_(events),c.ClassRef,kind,ref,action,admin.actor,reason]]);SpreadsheetApp.flush();return {success:true};
   });
 }
 function scoreClassKey_(session,programme,level){return [session,programme,level].map(scoreNorm_).join('|');}
@@ -42,11 +54,11 @@ function scoreClass_(book,ref,write){
 }
 function scoreClassCourses_(book,c){const key=scoreClassKey_(c.Session,c.Programme,c['Level/Set']);return scoreRead_(book,'ScoreCourses').filter(function(r){return scoreClassKey_(r.Session,r.Programme,r['Level/Set'])===key;});}
 function scoreClasses_(book){
-  const classes=scoreRead_(book,'ScoreClasses'),enrolments=scoreRead_(book,'ScoreClassEnrolments'),courses=scoreRead_(book,'ScoreCourses'),session=scoreConfig_(book).session,corrections=scoreCorrectionRows_(book);
+  const corrections=scoreCorrectionRows_(book),classes=scoreRead_(book,'ScoreClasses'),enrolments=scoreEnrolments_(book,corrections),courses=scoreRead_(book,'ScoreCourses'),session=scoreConfig_(book).session;
   return {success:true,session:session,classes:classes.map(function(c){return {ref:c.ClassRef,session:c.Session,programme:c.Programme,level:c['Level/Set'],editable:c.Session===session,studentCount:enrolments.filter(function(e){return e.ClassRef===c.ClassRef&&!scoreAssignmentRemoved_(book,'students',c.ClassRef,e.StudentRef,corrections);}).length,courseCount:courses.filter(function(r){return scoreClassKey_(r.Session,r.Programme,r['Level/Set'])===scoreClassKey_(c.Session,c.Programme,c['Level/Set'])&&!scoreAssignmentRemoved_(book,'courses',c.ClassRef,r.CourseRef,corrections);}).length};})};
 }
 function scoreClassDetails_(book,ref){
-  const c=scoreClass_(book,ref,false),corrections=scoreCorrectionRows_(book),students=scoreRead_(book,'ScoreStudents'),enrolments=scoreRead_(book,'ScoreClassEnrolments').filter(function(e){return e.ClassRef===ref;});
+  const c=scoreClass_(book,ref,false),corrections=scoreCorrectionRows_(book),students=scoreRead_(book,'ScoreStudents'),enrolments=scoreEnrolments_(book,corrections).filter(function(e){return e.ClassRef===ref;});
   return {success:true,classInfo:{ref:c.ClassRef,session:c.Session,programme:c.Programme,level:c['Level/Set'],editable:c.Session===scoreConfig_(book).session},courses:scoreClassCourses_(book,c).map(function(r){return Object.assign(scoreCourseObject_(r),{removed:scoreAssignmentRemoved_(book,'courses',c.ClassRef,r.CourseRef,corrections)});}),students:enrolments.map(function(e){const s=students.filter(function(r){return r.StudentRef===e.StudentRef;})[0];if(!s)throw new Error('A class enrolment points to a missing student.');return {ref:s.StudentRef,name:s.Name,matNo:s.MatNo,admissionNo:s.AdmissionNo,status:s.Status,removed:scoreAssignmentRemoved_(book,'students',c.ClassRef,s.StudentRef,corrections)};}).sort(scoreStudentOrder_)};
 }
 function scoreCreateClass_(book,data){
@@ -68,7 +80,7 @@ function scoreImportPlan_(book,data){
   const semester=scoreText_(data.semester);
   if(kind==='courses'&&!['1','2','3'].includes(semester))throw new Error('Select semester 1, 2 or 3.');
   const existing=kind==='courses'?scoreClassCourses_(book,c):scoreRead_(book,'ScoreStudents');
-  const corrections=scoreCorrectionRows_(book),enrolments=scoreRead_(book,'ScoreClassEnrolments'),seen=Object.create(null),plan=[];
+  const corrections=scoreCorrectionRows_(book),enrolments=scoreEnrolments_(book,corrections),seen=Object.create(null),plan=[];
   data.rows.forEach(function(raw,index){
     if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('Invalid import row.');
     const row=kind==='courses'?{CourseCode:scoreText_(raw.CourseCode).replace(/\s+/g,' '),Title:scoreText_(raw.Title),Units:scoreText_(raw.Units)}:{Name:scoreText_(raw.Name).replace(/\s+/g,' '),MatNo:scoreText_(raw.MatNo),AdmissionNo:scoreText_(raw.AdmissionNo)};
@@ -147,6 +159,7 @@ function scoreClassRoute_(book,data){
     case 'score.admin.class.create':return scoreCreateClass_(book,data);
     case 'score.admin.class.details':return scoreClassDetails_(book,scoreText_(data.classRef));
     case 'score.admin.class.assignment':return scoreCorrectAssignment_(book,data);
+    case 'score.admin.class.batch':return scoreBatchAssignments_(book,data);
     case 'score.admin.import.preview':return scoreImportPlan_(book,data);
     case 'score.admin.import.commit':return scoreCommitImport_(book,data);
     default:throw new Error('Unknown class administration action.');

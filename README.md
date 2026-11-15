@@ -1,5 +1,9 @@
 # RCM Academic Portal
 
+Admin class lists support checkbox selection for bulk student/course removal and
+same-session student transfers to correct registration mistakes. See
+[bulk corrections and installation](docs/BULK_CLASS_CORRECTIONS.md).
+
 ## Class administration
 
 The score administrator can create a session/programme/class, add one course or
