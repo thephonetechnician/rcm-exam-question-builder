@@ -430,7 +430,7 @@
     const btn = document.getElementById("rea-generate");
     btn.disabled = true; btn.textContent = "Generating…";
     try {
-      const docData = submissionToDocData(f);
+      const docData = submissionToDocData({...f, includeSignatureLines: document.getElementById('builder-signatures')?.checked === true});
       const blob = await generateDocx(docData);
       const filename = `${(f.courseCode || "Exam").replace(/\s+/g, "_")}_Exam_Questions.docx`;
       downloadBlob(blob, filename);
@@ -512,7 +512,7 @@
         try {
           const result = await getSavedPaper(rec.id, pin);
           const paper = result.paper;
-          const blob = await generateDocx(submissionToDocData(paper));
+          const blob = await generateDocx(submissionToDocData({...paper, includeSignatureLines: document.getElementById('builder-signatures')?.checked === true}));
           const filename = `${String(paper.courseCode || "Exam").replace(/\s+/g, "_")}_Exam_Questions.docx`;
           downloadBlob(blob, filename);
         } catch (error) {

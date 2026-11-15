@@ -21,6 +21,8 @@
       p.style.textIndent = pt(-Number(attr(indent, 'hanging')));
       p.style.marginTop = pt(attr(spacing, 'before'));
       p.style.marginBottom = pt(attr(spacing, 'after'));
+      const line = Number(attr(spacing, 'line'));
+      if (line) p.style.lineHeight = attr(spacing, 'lineRule') === 'exact' ? line / 20 + 'pt' : String(line / 240);
       if (child(props, 'pBdr')) { p.classList.add('paper-rule-line'); }
     }
     for (const r of children(xml, 'r')) {
@@ -75,7 +77,7 @@
     workspace.hidden = saved;
     document.getElementById('builder-view-switch').hidden = saved;
     if (saved) { paper.replaceChildren(); return; }
-    const xml = new DOMParser().parseFromString(buildDocumentXml(submissionToDocData(state.form)), 'application/xml');
+    const xml = new DOMParser().parseFromString(buildDocumentXml(submissionToDocData({...state.form, includeSignatureLines: document.getElementById('builder-signatures')?.checked === true})), 'application/xml');
     const body = xml.getElementsByTagNameNS(W, 'body')[0];
     if (!body) { paper.textContent = 'Preview is unavailable. Continue editing and try again.'; return; }
     paper.replaceChildren(...Array.from(body.children).flatMap(n => n.localName === 'p' ? [paragraph(n)] : n.localName === 'tbl' ? [table(n)] : []));
@@ -101,6 +103,7 @@
   document.getElementById('builder-edit-view').addEventListener('click', () => view('edit'));
   document.getElementById('builder-preview-view').addEventListener('click', () => view('preview'));
   document.getElementById('builder-preview-size').addEventListener('change', fit);
+  document.getElementById('builder-signatures').addEventListener('change', refresh);
   document.getElementById('rea-panel-new').addEventListener('input', refresh);
   document.getElementById('rea-panel-new').addEventListener('change', refresh);
   document.getElementById('rea-panel-new').addEventListener('click', event => { if (event.target.closest('.gap-insert')) refresh(); });

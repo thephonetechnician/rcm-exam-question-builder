@@ -48,10 +48,10 @@
       if (opts.line != null) {
         spacingAttrs.push(`w:line="${opts.line}"`);
         if (opts.lineRule) spacingAttrs.push(`w:lineRule="${opts.lineRule}"`);
-      }
+      } else spacingAttrs.push('w:line="288"', 'w:lineRule="auto"');
       pPr.push(`<w:spacing ${spacingAttrs.join(" ")}/>`);
     } else {
-      pPr.push(`<w:spacing w:after="0"/>`);
+      pPr.push(`<w:spacing w:after="80" w:line="288" w:lineRule="auto"/>`);
     }
     return `<w:p><w:pPr>${pPr.join("")}</w:pPr>${runsXml}</w:p>`;
   }
@@ -119,10 +119,10 @@
     </w:tbl>`;
 
     const spacer1 = "";
-    const examPeriod = para(run(data.examPeriodLine, { bold: true, sz: 28 }), { jc: "center", spacingAfter: 160 });
+    const examPeriod = para(run(data.examPeriodLine, { bold: true, sz: 28 }), { jc: "center", spacingBefore: 100, spacingAfter: 160 });
     const creditLine = para(run("Course Credit: - ", { bold: true }) + run(`${data.creditUnit} Units`, { bold: true }));
     const markLine = para(run(`Mark Obtainable: ${data.markObtainable}%`, { bold: true }), { spacingAfter: 0 });
-    const ruleBeforeQuestions = para("", { spacingAfter: 0, borderBottom: true, fullWidth: true, line: 20, lineRule: "exact" });
+    const ruleBeforeQuestions = para("", { spacingAfter: 240, borderBottom: true, fullWidth: true, line: 20, lineRule: "exact" });
 
     const TAB_POS = 450;
     let questionsXml = "";
@@ -138,7 +138,7 @@
             indLeft: TAB_POS,
             hanging: TAB_POS,
             tabs: [{ val: "left", pos: TAB_POS }],
-            spacingAfter: 40,
+            spacingAfter: 80,
             keepNext: true,
             keepLines: true
           }
@@ -152,7 +152,7 @@
               indLeft: OPTION_LEFT,
               hanging: 450,
               tabs: [{ val: "left", pos: OPTION_TAB }],
-              spacingAfter: isLast ? 200 : 20,
+              spacingAfter: isLast ? 240 : 60,
               keepNext: !isLast,
               keepLines: true
             }
@@ -173,32 +173,41 @@
     } else if (data.paperType === "German") {
       (data.questions || []).forEach((q) => questionsXml += para(run(`${q.number}.`) + run("\t") + runMultiline(q.text), { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 180, keepLines: true }));
     } else {
-      // Existing Theory question layout — intentionally retained unchanged.
+      // Theory content and marks are preserved; spacing is applied at download time.
       data.questions.forEach((q) => {
         if (q.parts.length === 1) {
           const p = q.parts[0];
           questionsXml += para(
-            run(`${q.number}.`) + run("\t") + run(`${p.text}  (${p.marks} marks)`),
-            { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 200 }
+            run(`${q.number}.`) + run("\t") + runMultiline(`${p.text}  (${p.marks} Marks)`),
+            { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 240, keepLines: true }
           );
         } else {
           q.parts.forEach((p, idx) => {
             if (idx === 0) {
               questionsXml += para(
-                run(`${q.number}.`) + run("\t") + run(`(${p.label})  ${p.text}  (${p.marks} marks)`),
-                { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 40 }
+                run(`${q.number}.`) + run("\t") + runMultiline(`(${p.label})  ${p.text}  (${p.marks} Marks)`),
+                { indLeft: TAB_POS, hanging: TAB_POS, tabs: [{ val: "left", pos: TAB_POS }], spacingAfter: 100, keepLines: true }
               );
             } else {
               const isLast = idx === q.parts.length - 1;
               questionsXml += para(
-                run(`(${p.label})  ${p.text}  (${p.marks} marks)`),
-                { indLeft: TAB_POS, spacingAfter: isLast ? 200 : 40 }
+                runMultiline(`(${p.label})  ${p.text}  (${p.marks} Marks)`),
+                { indLeft: TAB_POS, spacingAfter: isLast ? 240 : 100, keepLines: true }
               );
             }
           });
         }
       });
     }
+
+    const signatures = data.includeSignatureLines ? `
+      ${para('', {spacingBefore: 360, spacingAfter: 0, keepNext: true})}
+      <w:tbl><w:tblPr><w:tblW w:w="10466" w:type="dxa"/><w:tblLayout w:type="fixed"/></w:tblPr>
+      <w:tblGrid><w:gridCol w:w="6200"/><w:gridCol w:w="4266"/></w:tblGrid>
+      ${['RCM Examiner', 'Head of Department'].map((label, index) => `<w:tr><w:trPr><w:cantSplit/></w:trPr>
+        <w:tc><w:tcPr><w:tcW w:w="6200" w:type="dxa"/></w:tcPr>${para(run('____________________________'), {spacingBefore: index ? 360 : 120, spacingAfter: 100, keepNext: true})}${para(run(label), {spacingAfter: 120, keepNext: true})}</w:tc>
+        <w:tc><w:tcPr><w:tcW w:w="4266" w:type="dxa"/></w:tcPr>${para(run('________________________'), {spacingBefore: index ? 360 : 120, spacingAfter: 100, keepNext: true})}${para(run('Signature / Date'), {spacingAfter: 120, keepNext: index === 0})}</w:tc>
+      </w:tr>`).join('')}</w:tbl>${para('', {spacingAfter: 0})}` : '';
 
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">
@@ -212,6 +221,7 @@
     ${markLine}
     ${ruleBeforeQuestions}
     ${questionsXml}
+    ${signatures}
     <w:sectPr>
       <w:pgSz w:w="11906" w:h="16838"/>
       <w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="708" w:footer="708" w:gutter="0"/>
@@ -285,6 +295,7 @@
       creditUnit: f.creditUnit,
       markObtainable: f.markObtainable,
       paperType: f.paperType || "Theory",
+      includeSignatureLines: f.includeSignatureLines === true,
       questions: f.paperType === "Objective" ? (f.objectiveQuestions || f.questions || []) : f.paperType === "German" ? (f.germanQuestions || f.questions || []) : (f.questions || []),
       sections: f.sections || (f.questions && Array.isArray(f.questions.sections) ? f.questions.sections : []),
     };

@@ -1,5 +1,25 @@
 # Portal checkpoint — 15 November 2026
 
+## Examination document spacing and signature option
+
+Word generation now uses 1.2 line spacing, more paragraph separation and a 12pt
+gap after the rule before Question 1. Theory allocations use capitalised Marks and
+preserve explicit line breaks. The live preview follows these settings.
+
+The checkbox above the editor includes blank examiner/HOD name and signature/date
+rows in preview and downloads. This is a per-download presentation option, not a
+stored signature, approval or change to saved question text. It remains available
+on Saved submissions and applies to PIN-authorised regenerated downloads too.
+Previously stored Drive DOCX files and files already downloaded are not overwritten.
+
+All tests pass, including new exam-document-layout.test.mjs coverage for old record
+compatibility, unchanged source data, spacing, Marks, escaping and signature options.
+A generated reference sample was inspected in native Word (one page, clear question
+spacing and both signature rows). The packaged renderer could not run because
+LibreOffice is absent; no unrendered DOCX is being delivered. Browser checks verified
+the checkbox and matching preview. Original BAM 407_.docx was read only and unchanged.
+Changes are local awaiting normal frontend Git sync; no Apps Script update needed.
+
 ## Question Builder live preview
 
 The builder now has a polished editor and a local live paper preview derived from
