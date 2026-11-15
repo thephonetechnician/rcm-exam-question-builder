@@ -1,5 +1,31 @@
 # Portal checkpoint — 15 November 2026
 
+## Aurora Academic redesign and night mode
+
+The user's new direction replaces the visible minimal theme with an expressive
+indigo/plum/teal design across index, score submission, score admin and Question
+Builder. Layered hero, paper illustration, SVG tool/navigation icons, rounded
+cards, tinted status chips and refined editor chrome are implemented in
+css/academic-theme.css. Previous baseline sheets are retained for compatibility.
+
+js/theme.js runs before paint, follows the device theme initially and remembers
+explicit choices locally. Toggle available on all four pages. System changes,
+cross-tab changes and restricted storage are handled. Paper preview remains white
+with black text. Switching themes preserves entered scores and question text.
+
+All tests pass via node tests/run-all.mjs, including preference handling and colour
+contrast checks (main/muted/action/status text 4.5:1, field borders 3:1). Syntax and
+diff checks pass. Browser checks: all pages at 375/768/1024/1440px without page
+overflow, dark sign-in and admin dialogs, mobile Edit/Preview, form preservation
+and print-colour preview. Admin checks used the local synthetic backend only;
+no real submissions or records were touched.
+
+Changes remain local pending the user's normal Git sync. No new dependencies,
+React migration, backend change or Apps Script deployment. New files are
+css/academic-theme.css, js/theme.js and tests/theme.test.mjs; sync the four updated
+HTML pages and tests/run-all.mjs too. Design-system MASTER.md describes this
+current theme and supersedes the previous minimal direction.
+
 ## Examination document spacing and signature option
 
 Word generation now uses 1.2 line spacing, more paragraph separation and a 12pt

@@ -1,9 +1,11 @@
 # Question Builder workspace
 
-Follow MASTER.md. Use a balanced two-column editor/preview workspace above 1100px;
+Follow the current Aurora Academic MASTER.md for day/night colours and expressive
+header, rounded panels and teal controls. Keep the examination paper white/black.
+Use a balanced two-column editor/preview workspace above 1100px;
 on smaller screens use explicit Edit paper / Paper preview buttons. Keep original
 form state while switching views. Use clear section dividers, generous question
-text areas, consistent field labels and restrained maroon selected states.
+text areas, consistent field labels and teal selected states.
 
 The preview renders the existing Word XML locally with text nodes, not raw user
 HTML. It shares content and structure with the download generator, including both

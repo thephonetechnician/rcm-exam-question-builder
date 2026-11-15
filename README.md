@@ -1,5 +1,11 @@
 # RCM Academic Portal
 
+The Aurora Academic interface includes day/night mode on the dashboard, score
+submission, administrator and Question Builder pages. Use the header toggle; it
+remembers your choice locally and otherwise follows the device setting. The live
+paper preview retains print colours. This appearance update needs only the usual
+frontend Git sync, with no Apps Script redeployment or new dependencies.
+
 Admin class lists support checkbox selection for bulk student/course removal and
 same-session student transfers to correct registration mistakes. See
 [bulk corrections and installation](docs/BULK_CLASS_CORRECTIONS.md).
