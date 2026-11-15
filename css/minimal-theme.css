@@ -1,0 +1,147 @@
+/* RCM Minimalism: presentation only. Loaded after the existing page styles. */
+:root {
+  --navy: #24282d;
+  --maroon: #8c1d2b;
+  --muted: #596169;
+  --line: #dfe2e4;
+  --bg: #fafafa;
+  --ink: #24282d;
+  --surface: #fff;
+  --soft: #f3f4f4;
+  --accent-soft: #faf0f1;
+  --control-border: #92999f;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; font-size: 16px; }
+.portal-theme { background: var(--bg); color: var(--ink); }
+.portal-theme h1, .portal-theme h2, .portal-theme h3,
+.portal-theme .portal-name, .portal-theme .guidance h2 {
+  font-family: inherit; font-weight: 650; letter-spacing: -.035em;
+}
+.portal-theme h1 { font-size: clamp(1.9rem, 3vw, 2.65rem); line-height: 1.2; }
+.portal-theme h2 { font-size: 21px; }
+.portal-theme h3 { font-size: 17px; }
+.portal-theme p { line-height: 1.65; }
+.portal-theme .eyebrow, .portal-theme .hero-label { font-size: 11px; letter-spacing: .1em; }
+.portal-theme .institution { font-size: 11px; letter-spacing: .035em; }
+.portal-theme .portal-name { font-size: 18px; }
+.portal-theme .workspace { grid-template-columns: 244px minmax(0, 1fr); }
+.portal-theme .sidebar { padding: 32px 20px; }
+.portal-theme .side-nav { gap: 4px; }
+.portal-theme .side-nav a { min-height: 46px; font-size: 14px; border-radius: 4px; }
+.portal-theme .side-nav .selected { background: var(--accent-soft); }
+.portal-theme .side-nav a:hover { background: var(--soft); }
+.portal-theme .topbar { background: var(--surface); min-height: 84px; }
+.portal-theme .topbar p, .portal-theme .page-intro p:not(.eyebrow) { font-size: 14px; }
+.portal-theme main { padding-top: 40px; }
+.portal-theme .page-intro { margin-bottom: 32px; }
+.portal-theme .hero {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-left: 3px solid var(--maroon); border-radius: 4px;
+  padding: 36px; min-height: 250px; margin-bottom: 36px;
+}
+.portal-theme .hero-label { color: var(--maroon); }
+.portal-theme .hero h2 { font-size: clamp(1.8rem, 2.8vw, 2.5rem); line-height: 1.18; font-weight: 650; }
+.portal-theme .hero p { color: var(--muted); font-size: 15px; }
+.portal-theme .paper-preview { display: none; }
+.portal-theme .button {
+  min-height: 46px; padding: 11px 18px; gap: 12px; border-radius: 4px;
+  font-size: 14px; font-weight: 600; transition: background-color 200ms, border-color 200ms;
+}
+.portal-theme .button.light, .portal-theme .button.primary { background: var(--maroon); color: white; }
+.portal-theme .button.secondary { border-color: var(--control-border); color: var(--ink); }
+.portal-theme .button.secondary:hover { background: var(--soft); }
+.portal-theme .button:hover { filter: none; }
+.portal-theme .button.primary:hover, .portal-theme .button.light:hover { background: #701724; }
+.portal-theme .button:disabled { cursor: not-allowed; opacity: .55; }
+.portal-theme .grid { gap: 20px; }
+.portal-theme .card, .portal-theme .course-card, .portal-theme .score-panel,
+.portal-theme .admin-submission, .portal-theme .empty-state {
+  border-radius: 4px; box-shadow: none; border-color: var(--line);
+}
+.portal-theme .card { padding: 24px; }
+.portal-theme .card > p, .portal-theme .section-heading p,
+.portal-theme .empty-state p, .portal-theme .guidance p:not(.eyebrow),
+.portal-theme .course-card p { font-size: 14px; }
+.portal-theme .tool-icon, .portal-theme .tool-icon.amber, .portal-theme .tool-icon.purple {
+  background: var(--soft); color: var(--ink); border-radius: 4px;
+}
+.portal-theme .badge { font-size: 11px; border-radius: 3px; }
+.portal-theme .text-link { font-size: 14px; min-height: 44px; gap: 12px; }
+.portal-theme .card > .availability { font-size: 13px; }
+.portal-theme .empty-state { border-style: solid; padding: 32px 24px; }
+.portal-theme .empty-icon { background: var(--soft); color: var(--muted); border-radius: 4px; }
+.portal-theme .guidance { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; }
+.portal-theme footer { font-size: 12px; color: var(--muted); }
+.portal-theme dialog { border-radius: 6px; box-shadow: 0 16px 56px #0002; padding: 28px; }
+.portal-theme dialog::backdrop { background: #181b2066; backdrop-filter: none; }
+.portal-theme dialog h2 { font-size: 26px; line-height: 1.25; font-weight: 650; }
+.portal-theme dialog p, .portal-theme .muted { font-size: 14px; }
+.portal-theme label { font-size: 14px; }
+.portal-theme input, .portal-theme textarea, .portal-theme select {
+  border-color: var(--control-border); border-radius: 4px; font-size: 16px; color: var(--ink);
+}
+.portal-theme input:not([type="checkbox"]):not([type="radio"]), .portal-theme select { min-height: 46px; }
+.portal-theme input[type="checkbox"], .portal-theme input[type="radio"] { accent-color: var(--maroon); }
+.portal-theme :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 3px solid var(--maroon); outline-offset: 3px;
+}
+.portal-theme .close-button { min-width: 44px; min-height: 44px; }
+.portal-theme .score-main { padding-top: 40px; }
+.portal-theme .score-panel { padding: 28px; margin: 24px 0; }
+.portal-theme .score-steps { font-size: 14px; }
+.portal-theme .score-course-choice { border-radius: 4px; padding: 20px; }
+.portal-theme .score-course-choice strong { font-size: 16px; }
+.portal-theme .score-course-choice small { font-size: 13px; }
+.portal-theme .score-course-choice[aria-pressed="true"] { background: var(--accent-soft); }
+.portal-theme .score-table-wrap { border-radius: 4px; }
+.portal-theme .score-table { font-size: 14px; font-variant-numeric: tabular-nums; }
+.portal-theme .score-table th { background: var(--soft); color: var(--ink); font-size: 12px; border-bottom: 1px solid var(--line); }
+.portal-theme .score-table tr:nth-child(even) { background: #fafafa; }
+.portal-theme .score-table input { font-size: 16px; }
+.portal-theme .score-table .record-select { width: 24px; height: 24px; min-height: 24px; }
+.portal-theme .show-removed { min-height: 44px; }
+.portal-theme .show-removed input { width: 24px; height: 24px; }
+.portal-theme .class-context-label, .portal-theme .batch-record-list { background: var(--soft); border-radius: 4px; }
+.portal-theme .class-mode-tabs [aria-pressed="true"] { background: var(--ink); color: white; border-color: var(--ink); }
+.portal-theme .class-create summary { min-height: 44px; font-size: 14px; }
+.portal-theme .bulk-assignment-bar span { font-size: 14px; }
+.portal-theme .admin-submission p, .portal-theme small { font-size: 13px; }
+.portal-theme .preview-actions { bottom: -28px; }
+.portal-theme .score-mobile-hint { font-size: 13px; }
+
+/* The builder theme is isolated to its app shell; exported documents are unchanged. */
+.builder-theme { margin: 0; background: var(--bg); }
+.builder-theme #run-exam-app {
+  --navy: #24282d; --navy-soft: #454b52; --paper: #fafafa;
+  --card: #fff; --card-soft: #fafafa; --line: #dfe2e4; --ink-soft: #596169;
+  background: var(--bg); font-size: 16px;
+}
+.builder-theme #run-exam-app :is(.rea-letterhead, .rea-panel, .rea-question-card, .rea-credit-btn, .rea-objective-card) {
+  background: white; border-radius: 4px; box-shadow: none;
+}
+.builder-theme #run-exam-app .rea-letterhead { border-top-width: 3px; }
+.builder-theme #run-exam-app .rea-title { font-family: inherit; letter-spacing: -.03em; }
+.builder-theme #run-exam-app :is(input, select, textarea) { border-radius: 4px; font-size: 16px; }
+.builder-theme #run-exam-app :is(button, .rea-tab) { min-height: 44px; border-radius: 4px; }
+.builder-theme #run-exam-app :is(button, input, select, textarea):focus-visible,
+.builder-theme .rea-portal-nav a:focus-visible { outline: 3px solid var(--maroon); outline-offset: 3px; }
+.builder-theme .rea-portal-nav { font-size: 14px; }
+.builder-theme .rea-portal-nav a { display: inline-flex; align-items: center; min-height: 44px; }
+@media (max-width: 1000px) { .portal-theme .workspace { grid-template-columns: 210px minmax(0, 1fr); } }
+@media (max-width: 700px) {
+  .portal-theme .workspace { display: block; }
+  .portal-theme .sidebar { padding: 20px 16px; }
+  .portal-theme .side-nav a { font-size: 13px; }
+  .portal-theme .side-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; gap: 8px; }
+  .portal-theme .side-nav a { padding: 10px 8px; white-space: normal; gap: 8px; }
+  .portal-theme .institution { font-size: 10px; }
+  .portal-theme main, .portal-theme .score-main { padding: 28px 16px; }
+  .portal-theme .hero { padding: 24px; min-height: auto; }
+  .portal-theme .score-panel { padding: 20px 16px; }
+  .portal-theme .score-header { flex-wrap: wrap; gap: 8px; }
+  .portal-theme dialog { padding: 20px 16px; }
+  .portal-theme .preview-actions { bottom: -20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .portal-theme *, .builder-theme * { transition: none !important; scroll-behavior: auto !important; }
+}
