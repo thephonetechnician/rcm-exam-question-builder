@@ -1,5 +1,20 @@
 # Portal checkpoint — 16 November 2026
 
+## RCM Examinations & Records branding and themes
+
+Renamed the four main pages. Added authenticated shared logo/default-theme settings
+in module 14, with public branding reads routed through module 09. Uploaded images
+are resized to PNG; backend validates size, signature and dimensions. Revision
+checks prevent stale saves. Settings append to the existing audit-style table.
+The shared logo reaches site headers, live paper preview and future Word/PDF/XLSX
+downloads. Original logo restoration and offline/older-backend fallback are provided.
+
+Aurora, Classic College and Ocean offer independent day/night modes and persistent
+personal choices. Tests cover all palettes, branding authorization and export image
+embedding. Synthetic browser checks verified shared upload/restore, saved choices
+and mobile page widths. Nothing was pushed or deployed by this implementation.
+Follow [the installation guide](BRANDING_APPEARANCE.md) before using it live.
+
 ## Lecturer assignment template workflow, checklist and configurable scoring
 
 Implemented site-based Excel/CSV lecturer assignment download/upload/preview/confirm

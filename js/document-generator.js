@@ -1,5 +1,5 @@
 // ---------------- XML / docx generation ----------------
-  const EXAM_FORMAT_VERSION = '2026-11-16.1';
+  const EXAM_FORMAT_VERSION = '2026-11-16.2';
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -265,6 +265,7 @@
   }
 
   async function generateDocx(data) {
+    if(typeof window!=='undefined'&&window.RCMBranding)await window.RCMBranding.ready;
     const zip = new JSZip();
     zip.file("[Content_Types].xml", CONTENT_TYPES);
     zip.file("_rels/.rels", RELS);
@@ -272,7 +273,8 @@
     zip.file("word/_rels/document.xml.rels", docRels());
     zip.file("word/styles.xml", STYLES);
     zip.file("word/media/image1.png", b64ToUint8(LOGO_CREST_B64));
-    zip.file("word/media/image2.png", b64ToUint8(LOGO_EMBLEM_B64));
+    const sharedLogo=typeof window!=='undefined'?window.RCMBranding?.logoData:'';
+    zip.file("word/media/image2.png", b64ToUint8(sharedLogo?sharedLogo.slice(22):LOGO_EMBLEM_B64));
     return zip.generateAsync({ type: "blob" });
   }
 

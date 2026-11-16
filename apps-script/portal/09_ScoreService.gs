@@ -211,6 +211,9 @@ function scoreArchive_(book,data) {
 function scoreRoute_(data) {
   if(data.action==='score.admin.login')return scoreAdminLogin_(data);
   const book=scoreBook_();
+  if(data.action==='score.branding')return scoreBranding_(book);
+  if(data.action==='score.admin.branding'){scoreAdmin_(data.token);return scoreBranding_(book);}
+  if(data.action==='score.admin.branding.save')return scoreBrandingSave_(book,data);
   if(data.action.indexOf('score.admin.assignments.')===0||data.action.indexOf('score.admin.settings')===0){scoreAdmin_(data.token);return scoreWorkspaceRoute_(book,data);}
   if(data.action.indexOf('score.admin.classes')===0||data.action.indexOf('score.admin.class.')===0||data.action.indexOf('score.admin.import.')===0){scoreAdmin_(data.token);return scoreClassRoute_(book,data);}
   switch(data.action){

@@ -1,6 +1,8 @@
 /* Local-only appearance preference. Run in <head> before the first paint. */
 (() => {
   const key = 'rcm-appearance';
+  const paletteKey='rcm-theme-style',palettes=['aurora','classic','ocean'];let paletteChoice=null,schoolDefault='aurora';
+  try{const saved=localStorage.getItem(paletteKey);if(palettes.includes(saved))paletteChoice=saved;}catch(_){}
   const root = document.documentElement;
   const system = window.matchMedia('(prefers-color-scheme: dark)');
   let preference;
@@ -19,6 +21,8 @@
   function apply() {
     const mode = preference || (system.matches ? 'dark' : 'light');
     root.dataset.theme = mode;
+    root.dataset.palette=paletteChoice||schoolDefault;
+    document.querySelectorAll('[data-theme-style]').forEach(select=>{select.value=root.dataset.palette;});
     root.style.colorScheme = mode;
     document.querySelectorAll('[data-theme-toggle]').forEach(button => {
       const dark = mode === 'dark';
@@ -33,6 +37,7 @@
   }
   apply();
   document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-theme-style]').forEach(select=>select.addEventListener('change',()=>choosePalette(select.value)));
     document.querySelectorAll('[data-theme-toggle]').forEach(button => button.addEventListener('click', () => {
       preference = root.dataset.theme === 'dark' ? 'light' : 'dark';
       try { localStorage.setItem(key, preference); } catch (_) {}
@@ -45,9 +50,12 @@
   });
   system.addEventListener?.('change', () => { if (!preference) apply(); });
   window.addEventListener('storage', event => {
+    if(event.key===paletteKey||event.key===null){paletteChoice=palettes.includes(event.newValue)?event.newValue:null;apply();}
     if (event.key === key || event.key === null) {
       preference = ['light', 'dark'].includes(event.newValue) ? event.newValue : null;
       apply();
     }
   });
+  function choosePalette(value){if(!palettes.includes(value))return;paletteChoice=value;try{localStorage.setItem(paletteKey,value);}catch(_){}apply();}
+  window.RCMTheme=Object.freeze({choosePalette,setDefault(value){schoolDefault=palettes.includes(value)?value:'aurora';apply();}});
 })();

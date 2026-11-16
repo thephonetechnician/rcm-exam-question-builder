@@ -20,12 +20,12 @@ sheet('Config',[['Key','Value','Note'],['CA_MAX',30,''],['EXAM_MAX',70,''],['CUR
 const context=vm.createContext({Date,JSON,Object,Number,String,Math,Array,Boolean,Error,
   PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k)??null,getProperties:()=>Object.fromEntries(props),setProperty:(k,v)=>props.set(k,v),deleteProperty:k=>props.delete(k)})},
   SpreadsheetApp:{openById:id=>{const b=books.get(id);assert.ok(b,'Unknown test spreadsheet');return b;},flush:()=>{}},
-  Utilities:{DigestAlgorithm:{SHA_256:'SHA256'},Charset:{UTF_8:'utf8'},getUuid:randomUUID,computeDigest:(_a,v)=>[...createHash('sha256').update(v).digest()],formatDate:date=>date.toISOString().slice(0,10)},
+  Utilities:{DigestAlgorithm:{SHA_256:'SHA256'},Charset:{UTF_8:'utf8'},getUuid:randomUUID,base64Decode:v=>Array.from(Buffer.from(v,'base64')),computeDigest:(_a,v)=>[...createHash('sha256').update(v).digest()],formatDate:date=>date.toISOString().slice(0,10)},
   LockService:{getScriptLock:()=>({waitLock:()=>{if(held)throw new Error('Concurrent lock blocked');held=true;},releaseLock:()=>{held=false;}})},
   CacheService:{getScriptCache:()=>({get:k=>cache.get(k)??null,put:(k,v)=>cache.set(k,v),remove:k=>cache.delete(k)})},
   HtmlService:{XFrameOptionsMode:{ALLOWALL:'allow'},createHtmlOutput:html=>({html,setXFrameOptionsMode(){return this;}})}
 });
-for(const name of ['09_ScoreService.gs','10_ScoreSetup.gs','11_ClassManagement.gs','12_BulkAssignments.gs','13_AdminWorkspace.gs']) vm.runInContext(fs.readFileSync(new URL('../../apps-script/portal/'+name,import.meta.url),'utf8'),context);
+for(const name of ['09_ScoreService.gs','10_ScoreSetup.gs','11_ClassManagement.gs','12_BulkAssignments.gs','13_AdminWorkspace.gs','14_Branding.gs']) vm.runInContext(fs.readFileSync(new URL('../../apps-script/portal/'+name,import.meta.url),'utf8'),context);
 
 return {context,props,cache,sheets,book,books,controls:{get held(){return held;},set held(v){held=v;},get failTable(){return failTable;},set failTable(v){failTable=v;}}};
 }

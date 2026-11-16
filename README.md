@@ -1,4 +1,10 @@
-# RCM Academic Portal
+# RCM Examinations & Records
+
+Shared college logo settings and three themes (Aurora, Classic College and Ocean)
+are available, each with day/night mode. Administrators publish the logo and school
+default under Branding & Appearance; personal theme choices stay in the browser.
+See [branding installation and usage](docs/BRANDING_APPEARANCE.md). This update
+requires adding the branding Apps Script module and updating the deployment.
 
 Admins can download lecturer/course assignment templates, fill Lecturer IDs and
 names, upload Excel/CSV, preview and confirm. The checklist groups expected courses
@@ -9,8 +15,8 @@ features; this update adds Apps Script tables and requires a new deployment.
 The Aurora Academic interface includes day/night mode on the dashboard, score
 submission, administrator and Question Builder pages. Use the header toggle; it
 remembers your choice locally and otherwise follows the device setting. The live
-paper preview retains print colours. This appearance update needs only the usual
-frontend Git sync, with no Apps Script redeployment or new dependencies.
+paper preview retains print colours. Shared branding additionally needs the Apps
+Script update described above; no new frontend dependencies are needed.
 
 Admin class lists support checkbox selection for bulk student/course removal and
 same-session student transfers to correct registration mistakes. See

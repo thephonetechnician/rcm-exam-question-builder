@@ -40,7 +40,7 @@
           const img = document.createElement('img');
           const blip = Array.from(node.getElementsByTagName('*')).find(n => n.localName === 'blip');
           const rel = blip?.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'embed');
-          img.src = 'data:image/png;base64,' + (rel === 'rId1' ? LOGO_CREST_B64 : LOGO_EMBLEM_B64);
+          img.src = rel==='rId1'?'data:image/png;base64,'+LOGO_CREST_B64:window.RCMBranding?.logoData||'data:image/png;base64,'+LOGO_EMBLEM_B64;
           img.alt = ''; img.width = 91; img.height = rel === 'rId1' ? 91 : 85; span.append(img);
         }
       }

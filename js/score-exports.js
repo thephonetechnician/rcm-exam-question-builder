@@ -25,7 +25,17 @@
       ...students.map((r, i) => [i + 1, r.matNo || r.ref, r.name, r.ca, r.exam, r.total, r.grade,r.source||'Registered roster',r.registrationType||'',r.reason||''])
     ];
   }
+  async function excelLogo(zip,data){
+    const rels='http://schemas.openxmlformats.org/package/2006/relationships',base='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    zip.file('xl/media/college-logo.png',data.slice(22),{base64:true});
+    const types=await zip.file('[Content_Types].xml').async('string');zip.file('[Content_Types].xml',types.replace('</Types>','<Default Extension="png" ContentType="image/png"/><Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/></Types>'));
+    const sheet=await zip.file('xl/worksheets/sheet1.xml').async('string');zip.file('xl/worksheets/sheet1.xml',sheet.replace('<worksheet xmlns=',`<worksheet xmlns:r="${base}" xmlns=`).replace('</worksheet>','<drawing r:id="rId1"/></worksheet>'));
+    zip.file('xl/worksheets/_rels/sheet1.xml.rels',`<Relationships xmlns="${rels}"><Relationship Id="rId1" Type="${base}/drawing" Target="../drawings/drawing1.xml"/></Relationships>`);
+    zip.file('xl/drawings/_rels/drawing1.xml.rels',`<Relationships xmlns="${rels}"><Relationship Id="rId1" Type="${base}/image" Target="../media/college-logo.png"/></Relationships>`);
+    zip.file('xl/drawings/drawing1.xml',`<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${base}"><xdr:oneCellAnchor><xdr:from><xdr:col>7</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="914400" cy="914400"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="1" name="College logo"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="914400" cy="914400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`);
+  }
   async function excel(s) {
+    if(window.RCMBranding)await window.RCMBranding.ready;
     if (!window.JSZip) throw new Error('Excel export library did not load. Check your connection and refresh.');
     const zip = new window.JSZip();
     zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>');
@@ -39,16 +49,19 @@
       return typeof v === 'number' ? `<c r="${pos}"${style}><v>${v}</v></c>` : `<c r="${pos}" t="inlineStr"${style}><is><t xml:space="preserve">${xml(v)}</t></is></c>`;
     }).join('')+'</row>').join('');
     zip.file('xl/worksheets/sheet1.xml', '<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="10" topLeftCell="A11" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="8" customWidth="1"/><col min="2" max="2" width="29" customWidth="1"/><col min="3" max="3" width="45" customWidth="1"/><col min="4" max="7" width="18" customWidth="1"/><col min="8" max="9" width="28" customWidth="1"/><col min="10" max="10" width="65" customWidth="1"/></cols><sheetData>'+data+'</sheetData><autoFilter ref="A10:J'+(s.students.length+10)+'"/><pageSetup orientation="landscape" paperSize="9"/></worksheet>');
+    if(window.RCMBranding?.logoData)await excelLogo(zip,window.RCMBranding.logoData);
     const blob = await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     save(blob, filename(s)+'.xlsx');
   }
   async function pdf(s) {
+    if(window.RCMBranding)await window.RCMBranding.ready;
     s={...s,students:window.ScoreOrder?[...s.students].sort(window.ScoreOrder.compare):s.students};
     if (!window.jspdf?.jsPDF) throw new Error('PDF export library did not load. Check your connection and refresh.');
     const doc = new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     doc.addFileToVFS('DejaVuSans.ttf', await fontData()); doc.addFont('DejaVuSans.ttf','RCM','normal'); doc.setFont('RCM','normal');
     doc.setFontSize(15); doc.setTextColor(27,42,74); doc.text('REDEEMED COLLEGE OF MISSIONS',14,16);
     doc.setFontSize(11); doc.text('SUBMITTED SCORE SHEET',14,24);
+    if(window.RCMBranding?.logoData)doc.addImage(window.RCMBranding.logoData,'PNG',259,7,24,24);
     const details = [
       `${s.course.code} — ${s.course.title} (${s.course.units} units)`,
       `${s.course.programme} / ${s.course.level} · ${s.course.session} · Semester ${s.course.semester}`,
@@ -60,7 +73,7 @@
     doc.setFontSize(9); let y=32;
     for(const line of details){const lines=doc.splitTextToSize(line,268);doc.text(lines,14,y);y+=lines.length*4.5+2;}
     if(typeof doc.autoTable!=='function')throw new Error('PDF table library did not load. Refresh and try again.');
-    doc.autoTable({startY:y+2,head:[['No.','Matric number / reference','Student name','CA','Exam','Total','Grade']],body:s.students.map((r,i)=>[i+1,r.matNo||r.ref,r.name+(r.source==='Lecturer added'?' [Lecturer added]':''),r.ca,r.exam,r.total,r.grade]),styles:{font:'RCM',fontStyle:'normal',fontSize:9,cellPadding:2.8},headStyles:{fillColor:[27,42,74],fontStyle:'normal'},alternateRowStyles:{fillColor:[246,247,250]},margin:{bottom:16},didDrawPage:()=>{doc.setFont('RCM','normal');doc.setFontSize(8);doc.setTextColor(100);doc.text('RCM Academic Portal · '+s.course.code+' · '+s.course.session+' · Version '+s.version+' · Page '+doc.internal.getNumberOfPages(),14,202);}});
+    doc.autoTable({startY:y+2,head:[['No.','Matric number / reference','Student name','CA','Exam','Total','Grade']],body:s.students.map((r,i)=>[i+1,r.matNo||r.ref,r.name+(r.source==='Lecturer added'?' [Lecturer added]':''),r.ca,r.exam,r.total,r.grade]),styles:{font:'RCM',fontStyle:'normal',fontSize:9,cellPadding:2.8},headStyles:{fillColor:[27,42,74],fontStyle:'normal'},alternateRowStyles:{fillColor:[246,247,250]},margin:{bottom:16},didDrawPage:()=>{doc.setFont('RCM','normal');doc.setFontSize(8);doc.setTextColor(100);doc.text('RCM Examinations & Records · '+s.course.code+' · '+s.course.session+' · Version '+s.version+' · Page '+doc.internal.getNumberOfPages(),14,202);}});
     save(doc.output('blob'), filename(s)+'.pdf');
   }
   window.ScoreExports = Object.freeze({excel,pdf,rows});

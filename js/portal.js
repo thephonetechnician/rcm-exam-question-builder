@@ -43,9 +43,9 @@
   dialog.addEventListener('close', () => { $('lecturer-code').value = ''; });
   function reset() {
     generation++; token = ''; clearTimeout(expiryTimer);
-    $('welcome-title').textContent = 'Welcome to your portal.';
+    $('welcome-title').textContent = 'Your examination workspace.';
     $('welcome-copy').textContent = 'Prepare your papers. Manage your courses. Keep your academic work moving.';
-    $('session-label').textContent = 'RCM Academic Portal';
+    $('session-label').textContent = 'RCM Examinations & Records';
     $('open-login').hidden = false; $('logout').hidden = true;
     $('course-list').replaceChildren(); $('course-list').hidden = true; $('course-empty').hidden = false;
     $('courses-description').textContent = 'Your courses will appear here after you sign in.';

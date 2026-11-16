@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import {createRequire} from 'node:module';
+import {logoFixture} from './helpers/logo-fixture.mjs';
+const require=createRequire(import.meta.url),JSZip=require('../assets/vendor/jszip.min.js'),logo=logoFixture();
+const context=vm.createContext({window:{RCMBranding:{logoData:logo,ready:Promise.resolve()}},JSZip,Blob,Uint8Array,atob});
+for(const file of ['config','document-generator'])vm.runInContext(fs.readFileSync(new URL('../js/'+file+'.js',import.meta.url),'utf8'),context);
+const data=context.submissionToDocData({courseCode:'QA101',courseTitle:'Synthetic',session:'2026/2027',semester:'First',month:'NOVEMBER',year:2026,creditUnit:3,timeAllowed:'2 Hours',markObtainable:60,instruction:'Answer all',includeSignatureLines:true,questions:[{number:1,parts:[{text:'Preserved question',marks:15}]}]});
+const blob=await context.generateDocx(data),zip=await JSZip.loadAsync(await blob.arrayBuffer());
+assert.equal(await zip.file('word/media/image2.png').async('base64'),logo.slice(22));assert.notEqual(await zip.file('word/media/image1.png').async('base64'),logo.slice(22));
+const xml=await zip.file('word/document.xml').async('string');assert.match(xml,/Preserved question/);assert.match(xml,/15 Marks/);assert.match(xml,/Head of Department/);
+context.window.RCMBranding.logoData='';const original=await context.generateDocx(data),originalZip=await JSZip.loadAsync(await original.arrayBuffer());assert.notEqual(await originalZip.file('word/media/image2.png').async('base64'),logo.slice(22));
+console.log('PASS: Word download embeds the shared college logo, preserves collaborator crest/content/signatures and restores the original emblem.');

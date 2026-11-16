@@ -4,6 +4,7 @@ import vm from 'node:vm';
 import path from 'node:path';
 import os from 'node:os';
 import {createRequire} from 'node:module';
+import {logoFixture} from './helpers/logo-fixture.mjs';
 const require=createRequire(import.meta.url);
 const jspdf=require('../assets/vendor/jspdf.umd.min.js'),JSZip=require('../assets/vendor/jszip.min.js');
 const autoTable=require('../assets/vendor/jspdf.plugin.autotable.min.js');
@@ -29,3 +30,8 @@ assert.ok(xml.includes('Lecturer added'));assert.ok(xml.includes('Synthetic carr
 assert.equal((xml.match(/<row /g)||[]).length,130);
 console.log('PASS: 120-student PDF/XLSX generation, accented names, text matric numbers and formula injection prevention.');
 console.log('Synthetic export samples:',output);
+scope.window.RCMBranding={logoData:logoFixture(),ready:Promise.resolve()};
+await scope.window.ScoreExports.pdf(snapshot);assert.equal(Buffer.from(await saved.arrayBuffer()).subarray(0,4).toString(),'%PDF');
+await scope.window.ScoreExports.excel(snapshot);const brandedZip=await JSZip.loadAsync(await saved.arrayBuffer());
+assert.equal(await brandedZip.file('xl/media/college-logo.png').async('base64'),logoFixture().slice(22));assert.ok(brandedZip.file('xl/drawings/drawing1.xml'));assert.ok((await brandedZip.file('xl/worksheets/sheet1.xml').async('string')).includes('<drawing r:id="rId1"/>'));
+console.log('PASS: shared college logo is embedded in PDF and Excel score-sheet exports.');
