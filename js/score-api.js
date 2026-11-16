@@ -3,6 +3,7 @@
   window.ScoreAPI = Object.freeze({ request(payload) {
     const url = window.RCM_SCORE_CONFIG?.apiUrl || '';
     if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url)) return Promise.reject(new Error('The score service is not configured.'));
+    const end=window.RCMActivity?.begin(/submit|save|commit|archive|batch/.test(payload.action)?'Saving your changes…':'Loading data. Please wait…')||(()=>{});
     return new Promise((resolve, reject) => {
       const requestId = crypto.randomUUID(), frame = document.createElement('iframe'), form = document.createElement('form'), input = document.createElement('input');
       frame.name = 'score_' + requestId; frame.hidden = true; frame.title = 'Score service response';
@@ -23,6 +24,6 @@
       };
       const timer = setTimeout(() => finish(new Error('The score service did not respond. If you just submitted, retry the same submission or check PIN downloads before entering scores again.')), 45000);
       window.addEventListener('message', receive); document.body.append(frame, form); form.submit(); input.value = '';
-    });
+    }).finally(end);
   }});
 })();

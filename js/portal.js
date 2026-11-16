@@ -9,6 +9,7 @@
   let generation = 0;
   function request(payload) {
     if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url)) return Promise.reject(new Error('Lecturer sign-in is not connected yet. The Question Builder is available without portal sign-in.'));
+    const endLoading=window.RCMActivity?.begin('Connecting to your workspace…')||(()=>{});
     return new Promise((resolve, reject) => {
       const requestId = crypto.randomUUID();
       const frame = document.createElement('iframe');
@@ -28,7 +29,7 @@
       };
       const timer = setTimeout(() => finish(new Error('The service did not respond. Check your connection and try again.')), 30000);
       window.addEventListener('message', receive); document.body.append(frame, form); form.submit(); input.value = '';
-    });
+    }).finally(endLoading);
   }
   function notice(text) { $('portal-status').textContent = text; $('portal-status').hidden = !text; }
   function showLogin() {

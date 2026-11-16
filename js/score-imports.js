@@ -2,12 +2,12 @@
  * the browser until the administrator requests a server-side preview. */
 (() => {
   'use strict';
-  const fields={courses:['CourseCode','Title','Units'],students:['Name','MatNo','AdmissionNo']};
-  const tabs={courses:'Courses',students:'Students'};
+  const fields={courses:['CourseCode','Title','Units'],students:['Name','MatNo','AdmissionNo'],assignments:['LecturerID','LecturerName','CourseCode','Programme','Level/Set']};
+  const tabs={courses:'Courses',students:'Students',assignments:'Assignments'};
   const xml=v=>String(v??'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
   function cell(value,ref,style=0){return `<c r="${ref}" t="inlineStr" s="${style}"><is><t xml:space="preserve">${xml(value)}</t></is></c>`;}
   async function templateBlob(kind,context){
-    if(!fields[kind])throw new Error('Choose courses or students.');
+    if(!fields[kind])throw new Error('Choose a supported import template.');
     const zip=new window.JSZip(),ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main',rels='http://schemas.openxmlformats.org/package/2006/relationships';
     zip.file('[Content_Types].xml',`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`);
     zip.file('_rels/.rels',`<Relationships xmlns="${rels}"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
@@ -15,9 +15,10 @@
     zip.file('xl/_rels/workbook.xml.rels',`<Relationships xmlns="${rels}"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`);
     zip.file('xl/styles.xml',`<styleSheet xmlns="${ns}"><fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF8C1D2B"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="3"><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="49" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
     let data=`<row r="1" ht="26" customHeight="1">${fields[kind].map((h,i)=>cell(h,String.fromCharCode(65+i)+'1',1)).join('')}</row>`;
-    for(let row=2;row<=101;row++)data+=`<row r="${row}">${fields[kind].map((_,i)=>cell('',String.fromCharCode(65+i)+row,kind==='courses'&&i===2?2:0)).join('')}</row>`;
-    zip.file('xl/worksheets/sheet1.xml',`<worksheet xmlns="${ns}"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="${kind==='students'?42:22}" customWidth="1"/><col min="2" max="2" width="${kind==='students'?26:55}" customWidth="1"/><col min="3" max="3" width="26" customWidth="1"/></cols><sheetData>${data}</sheetData></worksheet>`);
-    const meta=[['Kind',kind],['ClassRef',context.ref],['Session',context.session],['Programme',context.programme],['Level/Set',context.level],['Semester',kind==='courses'?context.semester:'']];
+    const prepared=kind==='assignments'?(context.courses||[]):[];
+    for(let row=2;row<=Math.max(101,prepared.length+1);row++){const course=prepared[row-2],values=course?['','',course.code,course.programme,course.level]:[];data+=`<row r="${row}">${fields[kind].map((_,i)=>cell(values[i]||'',String.fromCharCode(65+i)+row,kind==='courses'&&i===2?2:0)).join('')}</row>`;}
+    zip.file('xl/worksheets/sheet1.xml',`<worksheet xmlns="${ns}"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="${kind==='students'?42:22}" customWidth="1"/><col min="2" max="2" width="${kind==='students'?26:55}" customWidth="1"/><col min="3" max="${fields[kind].length}" width="26" customWidth="1"/></cols><sheetData>${data}</sheetData></worksheet>`);
+    const meta=[['Kind',kind],['ClassRef',context.ref],['Session',context.session],['Programme',context.programme],['Level/Set',context.level],['Semester',kind!=='students'?context.semester:'']];
     zip.file('xl/worksheets/sheet2.xml',`<worksheet xmlns="${ns}"><sheetData>${meta.map((row,i)=>`<row r="${i+1}">${row.map((v,j)=>cell(v,String.fromCharCode(65+j)+(i+1))).join('')}</row>`).join('')}</sheetData></worksheet>`);
     return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
   }
@@ -39,7 +40,7 @@
   }
   const norm=v=>String(v??'').trim().toLowerCase().replace(/[\s_/-]+/g,'');
   function mapRows(matrix,kind,context){
-    const header=(matrix.shift()||[]).map(norm),required=kind==='courses'?['CourseCode','Title','Units']:['Name'];
+    const header=(matrix.shift()||[]).map(norm),required=kind==='assignments'?fields.assignments:kind==='courses'?['CourseCode','Title','Units']:['Name'];
     const positions={};for(const name of fields[kind]){let index=header.indexOf(norm(name));if(index<0&&name==='Title')index=header.indexOf('coursetitle');if(index<0&&name==='Name')index=header.indexOf('studentname');positions[name]=index;}
     for(const name of required)if(positions[name]<0)throw new Error(`Missing column ${name}. Download the ${tabs[kind]} template for this class.`);
     if(kind==='students'&&positions.MatNo<0&&positions.AdmissionNo<0)throw new Error('Include a MatNo or AdmissionNo column to identify students.');
@@ -47,7 +48,7 @@
     return rows.map(({values:r,row:sourceRow})=>{
       const statusColumn=header.indexOf('status');
       if(kind==='students'&&statusColumn>=0&&norm(r[statusColumn])!=='active')throw new Error('Only Active student rows can be registered through this import. Remove inactive, withdrawn or graduated rows first.');
-      for(const [label,expected] of [['Session',context.session],['Programme',context.programme],['Level/Set',context.level],['Semester',kind==='courses'?context.semester:'']]){
+      for(const [label,expected] of [['Session',context.session],['Programme',kind==='assignments'?'':context.programme],['Level/Set',kind==='assignments'?'':context.level],['Semester',kind!=='students'?context.semester:'']]){
         const i=header.indexOf(norm(label));if(i>=0&&expected&&norm(r[i])!==norm(expected))throw new Error(`The file contains a different ${label}. Select the matching class or use a class-specific template.`);
       }
       const obj={_row:sourceRow};for(const name of fields[kind])obj[name]=positions[name]<0?'':String(r[positions[name]]??'').trim();return obj;
@@ -77,7 +78,7 @@
         }values._row=Number(row.getAttribute('r'));return values;
       });
     }
-    const meta=await sheet('_Context');if(meta){const m=Object.fromEntries(meta.map(r=>[r[0],r[1]]));for(const [key,value] of [['Kind',kind],['ClassRef',context.ref],['Session',context.session],['Programme',context.programme],['Level/Set',context.level],['Semester',kind==='courses'?context.semester:'']])if(norm(m[key])!==norm(value))throw new Error('This template belongs to a different class or semester. Select its original class or download a new template.');}
+    const meta=await sheet('_Context');if(meta){const m=Object.fromEntries(meta.map(r=>[r[0],r[1]]));for(const [key,value] of [['Kind',kind],['ClassRef',context.ref],['Session',context.session],['Programme',context.programme],['Level/Set',context.level],['Semester',kind!=='students'?context.semester:'']])if(norm(m[key])!==norm(value))throw new Error('This template belongs to a different class or semester. Select its original class or download a new template.');}
     const data=await sheet(tabs[kind]);if(!data)throw new Error(`No ${tabs[kind]} sheet found. Keep the template tab name unchanged.`);
     return mapRows(data,kind,context);
   }

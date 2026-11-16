@@ -1,4 +1,42 @@
-# Portal checkpoint — 15 November 2026
+# Portal checkpoint — 16 November 2026
+
+## Lecturer assignment template workflow, checklist and configurable scoring
+
+Implemented site-based Excel/CSV lecturer assignment download/upload/preview/confirm
+in the admin page. Template courses are prefilled by active session and semester;
+admin fills LecturerID and LecturerName. IDs are text (0001 preserved), exact
+duplicates skip and identity/course-owner conflicts block imports. One responsible
+lecturer per course in this release. Append/commit-marker imports are retry-safe.
+
+New 13_AdminWorkspace.gs adds authenticated scoring settings and assignment routes.
+09_ScoreService.gs adds tables and stores scoring limits with new snapshots. Admin
+can explicitly choose 40/60, 30/70 or a positive integer split totaling 100. It does
+not silently change live Config. Submitted scores remain unchanged; stale drafts
+must refresh. Generic setupScoreMvp_ creates the additional tables without clearing.
+
+Checklist groups assignments by LecturerID and compares course score submissions,
+including reopened states. Paper tracking reads metadata columns only from existing
+SUBMISSIONS_SHEET_ID, or EXAM_TRACKER_SPREADSHEET_ID if configured separately.
+Without a source, paper status says Not connected. Ambiguous course codes require
+matching; legacy papers missing IDs are explicitly unverified. This is assignment
+completion tracking, not authenticated proof of the person submitting.
+
+Visible loading/saving banner now wraps score/admin API calls, lecturer sign-in and
+saved exam requests, handles concurrent operations and clears after errors.
+Backend and template tests plus real browser Excel download → filled workbook upload
+→ preview → confirm passed with synthetic LecturerID 0001. Browser verified CA max40,
+exam max60, mobile layout and night-mode workspace. Full suite, syntax/diff checks
+pass. No live records changed, no commit/push/deployment performed.
+
+Install via docs/LECTURER_ASSIGNMENTS.md: normal Git sync, replace09/add13, runsetup,
+deploy existing Apps Script version, then choose40/60 and save. Port8000 forwards
+Codespaces, so it requires the user's pull. Test server was stopped after QA.
+
+Earlier discussion still to implement in a separate upgrade: data-only exam saving
+(current save still uploads a Word copy alongside structured data); rename to RCM
+Examinations & Records; shared admin logo upload and selectable theme palettes.
+Current day/night toggle is already implemented. Do not claim those pending items
+were delivered by this lecturer assignment/settings change.
 
 ## Download-format troubleshooting and versioned assets
 

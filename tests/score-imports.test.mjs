@@ -24,3 +24,10 @@ await assert.rejects(()=>api.read(csv('Name,MatNo\n"Unclosed,0001'),'students',c
 rows=await api.read(csv('CourseCode,Title,Units\nCRS101,"A title, with a comma",2'),'courses',cls);assert.equal(rows[0].Title,'A title, with a comma');
 await assert.rejects(()=>api.read({name:'large.xlsx',size:4*1024*1024},'courses',cls),/smaller than 3 MB/);
 console.log('PASS: blank class-specific Excel templates, hidden context, text identifier formats, CSV quoting/leading zeros and mismatched/invalid import rejection.');
+const lecturerContext={ref:'LECTURER-ASSIGNMENTS',session:'2026/2027',programme:'All',level:'All',semester:'2',courses:[{code:'DEMO101',programme:'DEMO',level:'Test Class'}]};
+const lecturerBlob=await api.templateBlob('assignments',lecturerContext),lecturerZip=await JSZip.loadAsync(await lecturerBlob.arrayBuffer()),lecturerSheet=await lecturerZip.file('xl/worksheets/sheet1.xml').async('string');
+assert.ok(lecturerSheet.includes('LecturerID'));assert.ok(lecturerSheet.includes('LecturerName'));assert.ok(lecturerSheet.includes('DEMO101'));assert.ok(lecturerSheet.includes('Test Class'));assert.ok(lecturerSheet.includes('r="E1"'));
+rows=await api.read(csv('LecturerID,LecturerName,CourseCode,Programme,Level/Set\n0001,Sample Lecturer,DEMO101,DEMO,Test Class'),'assignments',lecturerContext);
+assert.equal(rows[0].LecturerID,'0001');assert.equal(rows[0].Programme,'DEMO');
+await assert.rejects(()=>api.read(csv('LecturerName,CourseCode,Programme,Level/Set\nSample,DEMO101,DEMO,Test Class'),'assignments',lecturerContext),/LecturerID/);
+console.log('PASS: downloadable lecturer assignment workbook, prefilled course context and text Lecturer IDs in uploads.');

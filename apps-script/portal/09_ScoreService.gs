@@ -13,7 +13,10 @@ const SCORE_TABLES_ = {
   ScoreAdditions: ['SubmissionID','StudentRef','MatNo','Name','RegistrationType','Reason','AddedBy','AddedAt','ReviewStatus'],
   ScoreCorrections: ['OperationID','Timestamp','ClassRef','Kind','EntityRef','Action','Actor','Reason'],
   ScoreAssignmentBatches: ['OperationID','BatchID','Timestamp','Actor','Reason','PayloadHash','ChangeCount','Mode'],
-  ScoreAssignmentChanges: ['BatchID','Kind','ClassRef','EntityRef','Action']
+  ScoreAssignmentChanges: ['BatchID','Kind','ClassRef','EntityRef','Action'],
+  ScoreLecturerAssignments: ['BatchID','LecturerID','LecturerName','CourseRef','Session','Semester'],
+  ScoreLecturerImports: ['OperationID','BatchID','PayloadHash','RowCount','CreatedAt','Actor'],
+  ScorePortalSettings: ['Setting','Value','UpdatedAt','Actor']
 };
 function scoreText_(v) { return String(v === null || v === undefined ? '' : v).trim(); }
 function scoreHash_(v) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(v), Utilities.Charset.UTF_8).map(function(b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join(''); }
@@ -45,6 +48,7 @@ function scoreLock_(fn) { const lock=LockService.getScriptLock();lock.waitLock(2
 function scoreConfig_(book) {
   const rows=scoreRead_(book,'Config'), lookup={};
   rows.forEach(function(r){lookup[scoreText_(r.Key)]=r.Value;});
+  if(typeof scoreSchoolSettings_==='function'){const settings=scoreSchoolSettings_(book);if(settings){lookup.CA_MAX=settings.caMax;lookup.EXAM_MAX=settings.examMax;}}
   const caMax=Number(lookup.CA_MAX),examMax=Number(lookup.EXAM_MAX),session=scoreText_(lookup.CURRENT_SESSION);
   if(!session || !Number.isFinite(caMax)||caMax<=0||!Number.isFinite(examMax)||examMax<=0) throw new Error('Review CURRENT_SESSION, CA_MAX and EXAM_MAX in Config.');
   const grades=rows.filter(function(r){return scoreText_(r.Key)!==''&&Number.isFinite(Number(r.Key));}).map(function(r){return {min:Number(r.Key),grade:scoreText_(r.Value)};}).sort(function(a,b){return b.min-a.min;});
@@ -137,7 +141,7 @@ function scoreSubmit_(book,data) {
     scoreAppend_(book,'ScoreEntries',entries);
     if(additions.length)scoreAppend_(book,'ScoreAdditions',additions.map(function(s){return [id,s.ref,s.matNo,s.name,s.registrationType,s.reason,lecturer,new Date().toISOString(),'Lecturer added — admin review'];}));
     SpreadsheetApp.flush();
-    scoreAppend_(book,'ScoreSubmissions',[[id,ref,version,new Date().toISOString(),lecturer,date,salt,scoreHash_(salt+'|'+pin),JSON.stringify(course),entries.length,op,payloadHash]]);
+    scoreAppend_(book,'ScoreSubmissions',[[id,ref,version,new Date().toISOString(),lecturer,date,salt,scoreHash_(salt+'|'+pin),JSON.stringify(Object.assign({},course,{caMax:cfg.caMax,examMax:cfg.examMax})),entries.length,op,payloadHash]]);
     SpreadsheetApp.flush();
     return {success:true,submissionId:id,version:version,saved:entries.length};
   });
@@ -207,6 +211,7 @@ function scoreArchive_(book,data) {
 function scoreRoute_(data) {
   if(data.action==='score.admin.login')return scoreAdminLogin_(data);
   const book=scoreBook_();
+  if(data.action.indexOf('score.admin.assignments.')===0||data.action.indexOf('score.admin.settings')===0){scoreAdmin_(data.token);return scoreWorkspaceRoute_(book,data);}
   if(data.action.indexOf('score.admin.classes')===0||data.action.indexOf('score.admin.class.')===0||data.action.indexOf('score.admin.import.')===0){scoreAdmin_(data.token);return scoreClassRoute_(book,data);}
   switch(data.action){
     case 'score.catalogue':return scoreCatalogue_(book);

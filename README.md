@@ -1,5 +1,11 @@
 # RCM Academic Portal
 
+Admins can download lecturer/course assignment templates, fill Lecturer IDs and
+names, upload Excel/CSV, preview and confirm. The checklist groups expected courses
+by Lecturer ID. School CA/exam limits can be set to 40/60, 30/70 or a custom split.
+See [installation and usage](docs/LECTURER_ASSIGNMENTS.md) before enabling these
+features; this update adds Apps Script tables and requires a new deployment.
+
 The Aurora Academic interface includes day/night mode on the dashboard, score
 submission, administrator and Question Builder pages. Use the header toggle; it
 remembers your choice locally and otherwise follows the device setting. The live

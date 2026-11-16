@@ -9,7 +9,7 @@ const {context,props}=createScoreHarness();
 context.setupScoreMvp_();context.seedScoreDemo_();
 props.set('SCORE_ADMIN_KEY','SYNTHETIC-ADMIN-KEY-ONLY-12345');context.configureScoreAdmin_();
 const types={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.jpg':'image/jpeg','.ttf':'font/ttf'};
-const client="window.ScoreAPI=Object.freeze({request:async payload=>{const response=await fetch('/__test-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await response.json();if(!data.success)throw new Error(data.error);return data;}});";
+const client="window.ScoreAPI=Object.freeze({request:async payload=>{const end=window.RCMActivity?.begin('Loading test data. Please wait…')||(()=>{});try{if(location.search.includes('slow'))await new Promise(r=>setTimeout(r,1800));const response=await fetch('/__test-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await response.json();if(!data.success)throw new Error(data.error);return data;}finally{end();}}});";
 http.createServer(async(req,res)=>{
   try{
     const url=new URL(req.url,'http://localhost');

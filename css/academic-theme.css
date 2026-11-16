@@ -24,6 +24,10 @@
   --shadow: 0 12px 32px #0002; --strong-shadow: 0 22px 70px #0006;
 }
 html { background: var(--bg); }
+.activity-banner { position: fixed; z-index: 10000; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; padding: 16px 22px; max-width: calc(100vw - 32px); border: 1px solid var(--accent-line); border-radius: 14px; background: var(--surface); color: var(--ink); box-shadow: var(--strong-shadow); font-size: 14px; font-weight: 650; pointer-events: none; }
+.activity-banner[hidden] { display: none; }
+.activity-spinner { width: 23px; height: 23px; flex: 0 0 23px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: activity-turn 900ms linear infinite; }
+@keyframes activity-turn { to { transform: rotate(360deg); } }
 body.portal-theme, body.builder-theme { background: radial-gradient(ellipse at 90% 0%, #7c70c511, transparent 50%), var(--bg); color: var(--ink); }
 .theme-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 600 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; cursor: pointer; white-space: nowrap; }
 .theme-toggle:hover { background: var(--soft); border-color: var(--accent-line); }

@@ -13,6 +13,7 @@ let state = {
 
 
 function loadSaved() {
+  const endLoading=window.RCMActivity?.begin('Loading saved examination papers…')||(()=>{});
 
   state.savedLoading = true;
   render();
@@ -27,6 +28,7 @@ function loadSaved() {
 
 
   const cleanup = () => {
+    endLoading();
 
     if (script.parentNode) {
       script.parentNode.removeChild(script);
@@ -168,6 +170,7 @@ function blobToBase64(blob) {
 // ------------------------------------------------------------
 
 function postSecureAction(payload) {
+  const endLoading=window.RCMActivity?.begin(payload.action==='save'?'Saving examination paper…':'Loading examination paper…')||(()=>{});
   return new Promise((resolve, reject) => {
     const requestId = "rcm_req_" + Date.now() + "_" + Math.random().toString(36).slice(2);
     const iframeName = "rcm_frame_" + requestId.replace(/[^a-zA-Z0-9_]/g, "");
@@ -217,7 +220,7 @@ function postSecureAction(payload) {
     document.body.appendChild(iframe);
     document.body.appendChild(form);
     form.submit();
-  });
+  }).finally(endLoading);
 }
 
 // ------------------------------------------------------------
