@@ -20,7 +20,7 @@ function scoreAssignmentContext_(book,semester){
   return {session:catalogue.config.session,semester:semester,courses:catalogue.courses.filter(function(c){return c.semester===semester;})};
 }
 function scoreLecturerPlan_(book,data){
-  const ctx=scoreAssignmentContext_(book,data.semester),existing=scoreLecturerAssignments_(book),seen=Object.create(null),names=Object.create(null),byCourse=Object.create(null);
+  const ctx=scoreAssignmentContext_(book,data.semester),existing=scoreLecturerAssignments_(book),directory=scoreLecturerDirectory_(book),seen=Object.create(null),names=Object.create(null),byCourse=Object.create(null);
   existing.forEach(function(r){names[scoreNorm_(r.LecturerID)]=scoreNorm_(r.LecturerName);byCourse[r.CourseRef]=r;});
   if(!Array.isArray(data.rows)||data.rows.length<1||data.rows.length>1000)throw new Error('Upload 1–1,000 assignment rows.');
   const rows=data.rows.map(function(raw,i){
@@ -29,18 +29,21 @@ function scoreLecturerPlan_(book,data){
     const v=row.values,id=scoreNorm_(v.LecturerID),name=scoreNorm_(v.LecturerName);
     function conflict(message){row.status='Conflict';row.message=message;return row;}
     if(!v.LecturerID&&!v.LecturerName){row.status='Skip';row.message='No lecturer entered for this course';return row;}
-    if(!/^[A-Za-z0-9][A-Za-z0-9._/-]{0,79}$/.test(v.LecturerID)||v.LecturerName.length<2||v.LecturerName.length>150)return conflict('Enter a valid LecturerID and full name. Keep IDs as text.');
+    const lecturer=directory.filter(function(p){return scoreNorm_(p.id)===id;})[0];
+    if(!lecturer)return conflict('LecturerID is not registered. Register this lecturer in the directory first.');
+    if(v.LecturerName&&name!==scoreNorm_(lecturer.name))return conflict('LecturerName does not match the registered LecturerID.');
+    v.LecturerID=lecturer.id;v.LecturerName=lecturer.name;
     const matches=ctx.courses.filter(function(c){return scoreNorm_(c.code)===scoreNorm_(v.CourseCode)&&scoreNorm_(c.programme)===scoreNorm_(v.Programme)&&scoreNorm_(c.level)===scoreNorm_(v['Level/Set']);});
     if(matches.length!==1)return conflict('Course not found or ambiguous in this session/semester. Check programme and class.');
     row.courseRef=matches[0].ref;
-    if(names[id]&&names[id]!==name)return conflict('This LecturerID already has a different name.');
-    names[id]=name;
+    if(names[id]&&names[id]!==scoreNorm_(v.LecturerName))return conflict('This LecturerID already has a different name.');
+    names[id]=scoreNorm_(v.LecturerName);
     const prior=seen[row.courseRef]||byCourse[row.courseRef];
-    if(prior){if(scoreNorm_(prior.LecturerID)===id&&scoreNorm_(prior.LecturerName)===name){row.status='Skip';row.message='Exact duplicate';}else return conflict('This course already has a different responsible lecturer. No overwrite is allowed.');}
+    if(prior){if(scoreNorm_(prior.LecturerID)===id&&scoreNorm_(prior.LecturerName)===scoreNorm_(v.LecturerName)){row.status='Skip';row.message='Exact duplicate';}else return conflict('This course already has a different responsible lecturer. No overwrite is allowed.');}
     seen[row.courseRef]=v;return row;
   });
   const counts={add:0,skip:0,conflict:0};rows.forEach(function(r){counts[r.status.toLowerCase()]++;});
-  const revision=scoreHash_(JSON.stringify({ctx:ctx,existing:existing}));
+  const revision=scoreHash_(JSON.stringify({ctx:ctx,existing:existing,directory:directory}));
   return {success:true,session:ctx.session,semester:ctx.semester,rows:rows,counts:counts,revision:revision};
 }
 function scoreLecturerCommit_(book,data){return scoreLock_(function(){
@@ -74,6 +77,7 @@ function scoreAssignmentReport_(book,semester){
   const ctx=scoreAssignmentContext_(book,semester),assignments=scoreLecturerAssignments_(book).filter(function(r){return r.Session===ctx.session&&r.Semester===ctx.semester;}),subs=scoreRead_(book,'ScoreSubmissions'),events=scoreRead_(book,'ScoreHistory'),archived={};
   events.forEach(function(e){if(e.Action==='Archived')archived[e.SubmissionID]=true;});
   const lecturers=Object.create(null),papers=scoreExamMetadata_(ctx);
+  scoreLecturerDirectory_(book).forEach(function(p){lecturers[scoreNorm_(p.id)]={id:p.id,name:p.name,total:0,submitted:0,papersSubmitted:0};});
   const courses=ctx.courses.map(function(c){
     const a=assignments.filter(function(r){return r.CourseRef===c.ref;})[0],latest=subs.filter(function(s){return s.CourseRef===c.ref;}).sort(function(x,y){return Number(y.Version)-Number(x.Version);})[0];
     const status=latest&&!archived[latest.SubmissionID]?'Submitted':latest?'Reopened':'Outstanding';

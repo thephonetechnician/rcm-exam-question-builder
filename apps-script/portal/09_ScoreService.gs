@@ -16,6 +16,8 @@ const SCORE_TABLES_ = {
   ScoreAssignmentChanges: ['BatchID','Kind','ClassRef','EntityRef','Action'],
   ScoreLecturerAssignments: ['BatchID','LecturerID','LecturerName','CourseRef','Session','Semester'],
   ScoreLecturerImports: ['OperationID','BatchID','PayloadHash','RowCount','CreatedAt','Actor'],
+  ScoreDirectoryRows: ['BatchID','LecturerID','LecturerName','Email'],
+  ScoreDirectoryImports: ['OperationID','BatchID','PayloadHash','RowCount','CreatedAt','Actor'],
   ScorePortalSettings: ['Setting','Value','UpdatedAt','Actor']
 };
 function scoreText_(v) { return String(v === null || v === undefined ? '' : v).trim(); }
@@ -211,6 +213,7 @@ function scoreArchive_(book,data) {
 function scoreRoute_(data) {
   if(data.action==='score.admin.login')return scoreAdminLogin_(data);
   const book=scoreBook_();
+  if(data.action.indexOf('score.admin.lecturers.')===0){scoreAdmin_(data.token);return scoreDirectoryRoute_(book,data);}
   if(data.action==='score.branding')return scoreBranding_(book);
   if(data.action==='score.admin.branding'){scoreAdmin_(data.token);return scoreBranding_(book);}
   if(data.action==='score.admin.branding.save')return scoreBrandingSave_(book,data);

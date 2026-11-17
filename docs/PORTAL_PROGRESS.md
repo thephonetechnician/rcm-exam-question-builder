@@ -1,4 +1,19 @@
-# Portal checkpoint — 16 November 2026
+# Portal checkpoint — 17 November 2026
+
+## Lecturer directory before course assignment
+
+Added module 15 with authenticated registration preview/commit/list. Append-only
+directory imports use commit markers, payload hashes and revision checks. Module 09
+adds two directory tables and private routing; module 13 resolves assignment IDs
+through the directory and includes unassigned lecturers in the report. Existing
+committed assignment identities remain visible without migration writes.
+
+Admin can download/upload a blank lecturer template, register one lecturer, search
+the directory and select registered lecturers for individual course assignments.
+Bulk assignment needs only the ID; old matching-name files remain compatible.
+Node checks and synthetic browser registration/assignment/download checks passed.
+Install using [the directory guide](LECTURER_DIRECTORY.md). No live data was changed,
+and these changes have not been committed, pushed or deployed by the agent.
 
 ## RCM Examinations & Records branding and themes
 

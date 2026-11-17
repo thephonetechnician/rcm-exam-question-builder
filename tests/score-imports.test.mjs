@@ -31,3 +31,11 @@ rows=await api.read(csv('LecturerID,LecturerName,CourseCode,Programme,Level/Set\
 assert.equal(rows[0].LecturerID,'0001');assert.equal(rows[0].Programme,'DEMO');
 await assert.rejects(()=>api.read(csv('LecturerName,CourseCode,Programme,Level/Set\nSample,DEMO101,DEMO,Test Class'),'assignments',lecturerContext),/LecturerID/);
 console.log('PASS: downloadable lecturer assignment workbook, prefilled course context and text Lecturer IDs in uploads.');
+rows=await api.read(csv('LecturerID,CourseCode,Programme,Level/Set\n0001,DEMO101,DEMO,Test Class'),'assignments',lecturerContext);
+assert.equal(rows[0].LecturerName,'');assert.equal(rows[0].LecturerID,'0001');
+const directoryContext={ref:'LECTURER-DIRECTORY',session:'All',programme:'All',level:'All',semester:''};
+const directoryBlob=await api.templateBlob('lecturers',directoryContext),directoryZip=await JSZip.loadAsync(await directoryBlob.arrayBuffer()),directorySheet=await directoryZip.file('xl/worksheets/sheet1.xml').async('string');
+assert.ok(directorySheet.includes('LecturerID'));assert.ok(directorySheet.includes('LecturerName'));assert.ok(directorySheet.includes('Email'));assert.ok(!directorySheet.includes('Sample Lecturer'));
+rows=await api.read(csv('LecturerID,LecturerName\n0007,Test Lecturer'),'lecturers',directoryContext);assert.equal(rows[0].LecturerID,'0007');assert.equal(rows[0].Email,'');
+await assert.rejects(()=>api.read(csv('LecturerName,Email\nTest Lecturer,test@example.invalid'),'lecturers',directoryContext),/LecturerID/);
+console.log('PASS: blank lecturer directory template, optional email and ID-only course assignment imports.');

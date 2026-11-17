@@ -2,8 +2,8 @@
  * the browser until the administrator requests a server-side preview. */
 (() => {
   'use strict';
-  const fields={courses:['CourseCode','Title','Units'],students:['Name','MatNo','AdmissionNo'],assignments:['LecturerID','LecturerName','CourseCode','Programme','Level/Set']};
-  const tabs={courses:'Courses',students:'Students',assignments:'Assignments'};
+  const fields={lecturers:['LecturerID','LecturerName','Email'],courses:['CourseCode','Title','Units'],students:['Name','MatNo','AdmissionNo'],assignments:['LecturerID','CourseCode','Programme','Level/Set','LecturerName']};
+  const tabs={lecturers:'Lecturers',courses:'Courses',students:'Students',assignments:'Assignments'};
   const xml=v=>String(v??'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
   function cell(value,ref,style=0){return `<c r="${ref}" t="inlineStr" s="${style}"><is><t xml:space="preserve">${xml(value)}</t></is></c>`;}
   async function templateBlob(kind,context){
@@ -16,7 +16,7 @@
     zip.file('xl/styles.xml',`<styleSheet xmlns="${ns}"><fonts count="2"><font><sz val="11"/><name val="Arial"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF8C1D2B"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="3"><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="49" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
     let data=`<row r="1" ht="26" customHeight="1">${fields[kind].map((h,i)=>cell(h,String.fromCharCode(65+i)+'1',1)).join('')}</row>`;
     const prepared=kind==='assignments'?(context.courses||[]):[];
-    for(let row=2;row<=Math.max(101,prepared.length+1);row++){const course=prepared[row-2],values=course?['','',course.code,course.programme,course.level]:[];data+=`<row r="${row}">${fields[kind].map((_,i)=>cell(values[i]||'',String.fromCharCode(65+i)+row,kind==='courses'&&i===2?2:0)).join('')}</row>`;}
+    for(let row=2;row<=Math.max(101,prepared.length+1);row++){const course=prepared[row-2],values=course?['',course.code,course.programme,course.level,'']:[];data+=`<row r="${row}">${fields[kind].map((_,i)=>cell(values[i]||'',String.fromCharCode(65+i)+row,kind==='courses'&&i===2?2:0)).join('')}</row>`;}
     zip.file('xl/worksheets/sheet1.xml',`<worksheet xmlns="${ns}"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="${kind==='students'?42:22}" customWidth="1"/><col min="2" max="2" width="${kind==='students'?26:55}" customWidth="1"/><col min="3" max="${fields[kind].length}" width="26" customWidth="1"/></cols><sheetData>${data}</sheetData></worksheet>`);
     const meta=[['Kind',kind],['ClassRef',context.ref],['Session',context.session],['Programme',context.programme],['Level/Set',context.level],['Semester',kind!=='students'?context.semester:'']];
     zip.file('xl/worksheets/sheet2.xml',`<worksheet xmlns="${ns}"><sheetData>${meta.map((row,i)=>`<row r="${i+1}">${row.map((v,j)=>cell(v,String.fromCharCode(65+j)+(i+1))).join('')}</row>`).join('')}</sheetData></worksheet>`);
@@ -40,7 +40,7 @@
   }
   const norm=v=>String(v??'').trim().toLowerCase().replace(/[\s_/-]+/g,'');
   function mapRows(matrix,kind,context){
-    const header=(matrix.shift()||[]).map(norm),required=kind==='assignments'?fields.assignments:kind==='courses'?['CourseCode','Title','Units']:['Name'];
+    const header=(matrix.shift()||[]).map(norm),required=kind==='lecturers'?['LecturerID','LecturerName']:kind==='assignments'?['LecturerID','CourseCode','Programme','Level/Set']:kind==='courses'?['CourseCode','Title','Units']:['Name'];
     const positions={};for(const name of fields[kind]){let index=header.indexOf(norm(name));if(index<0&&name==='Title')index=header.indexOf('coursetitle');if(index<0&&name==='Name')index=header.indexOf('studentname');positions[name]=index;}
     for(const name of required)if(positions[name]<0)throw new Error(`Missing column ${name}. Download the ${tabs[kind]} template for this class.`);
     if(kind==='students'&&positions.MatNo<0&&positions.AdmissionNo<0)throw new Error('Include a MatNo or AdmissionNo column to identify students.');

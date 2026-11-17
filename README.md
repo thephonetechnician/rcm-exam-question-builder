@@ -1,5 +1,9 @@
 # RCM Examinations & Records
 
+Administrators can register lecturers first through a downloadable Excel template
+or a single-lecturer form, then assign courses using the registered Lecturer ID.
+Existing assignments are preserved. See [lecturer directory setup](docs/LECTURER_DIRECTORY.md).
+
 Shared college logo settings and three themes (Aurora, Classic College and Ocean)
 are available, each with day/night mode. Administrators publish the logo and school
 default under Branding & Appearance; personal theme choices stay in the browser.

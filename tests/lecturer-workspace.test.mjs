@@ -7,6 +7,7 @@ const call=d=>c.scoreRoute_(d),token=call({action:'score.admin.login',key:'SYNTH
 c.scoreAppend_(book,'ScoreCourses',[['DEMO002','DEMO102','Second course',2,'2026/2027','1','DEMO','Test Class']]);
 assert.throws(()=>call({action:'score.admin.assignments.context',semester:'1'}),/Administrator session/);
 const rows=['DEMO101','DEMO102'].map(CourseCode=>({LecturerID:'0001',LecturerName:'Sample Lecturer',CourseCode,Programme:'DEMO','Level/Set':'Test Class'}));
+const people=[{LecturerID:'0001',LecturerName:'Sample Lecturer'}];const registration=admin({action:'score.admin.lecturers.preview',rows:people});admin({action:'score.admin.lecturers.commit',rows:people,revision:registration.revision,operationId:randomUUID()});
 const preview=rows=>admin({action:'score.admin.assignments.preview',semester:'1',rows});
 let plan=preview(rows);assert.equal(plan.counts.add,2);
 let operationId=randomUUID(),payload={action:'score.admin.assignments.commit',semester:'1',rows,revision:plan.revision,operationId};
