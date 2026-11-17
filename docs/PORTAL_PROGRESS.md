@@ -1,5 +1,15 @@
 # Portal checkpoint — 17 November 2026
 
+## Comma-separated names and multi-course selection
+
+Added server-generated lecturer IDs with duplicate-name reuse, preview revisions
+and retry-safe registration. Existing IDs remain intact. Admin can search/scroll
+lecturers and check several courses, filter by code/title/class and preview/confirm
+all selected assignments together. Other lecturers' course ownership is protected.
+Existing spreadsheet workflows remain available. Bulk registration and two-course
+assignment passed synthetic browser checks; mobile layout has no page overflow.
+Update module 15 and the frontend, then redeploy; no new tables in this upgrade.
+
 ## Lecturer directory before course assignment
 
 Added module 15 with authenticated registration preview/commit/list. Append-only

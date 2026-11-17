@@ -8,6 +8,13 @@ function scoreLecturerDirectory_(book){
 }
 function scoreDirectoryPlan_(book,data){
   const directory=scoreLecturerDirectory_(book),known=Object.create(null),seen=Object.create(null);directory.forEach(function(p){known[scoreNorm_(p.id)]=p;});
+  if(typeof data.names==='string'){
+    if(data.names.length>151000)throw new Error('Register at most 1,000 names at a time.');
+    const names=data.names.split(',').map(scoreText_).filter(function(n){return n!=='';}),reserved=Object.create(null);let next=1;
+    directory.forEach(function(p){reserved[scoreNorm_(p.id)]=true;const m=/^L(\d+)$/i.exec(p.id);if(m&&Number(m[1])<100000000)next=Math.max(next,Number(m[1])+1);});
+    const generated=Object.create(null);
+    data=Object.assign({},data,{rows:names.map(function(name){const key=scoreNorm_(name),matches=directory.filter(function(p){return scoreNorm_(p.name)===key;});if(matches.length>1)throw new Error('More than one lecturer is named '+name+'. Use the directory and Lecturer IDs to distinguish them.');let id=matches.length?matches[0].id:generated[key];if(!id){do{id='L'+String(next++).padStart(4,'0');}while(reserved[scoreNorm_(id)]);reserved[scoreNorm_(id)]=true;generated[key]=id;}return {LecturerID:id,LecturerName:name,Email:matches.length?matches[0].email:''};})});
+  }
   if(!Array.isArray(data.rows)||!data.rows.length||data.rows.length>1000)throw new Error('Upload 1–1,000 lecturer rows.');
   const rows=data.rows.map(function(raw,i){const v={LecturerID:scoreText_(raw.LecturerID),LecturerName:scoreText_(raw.LecturerName),Email:scoreText_(raw.Email)},r={row:Number(raw._row)||i+2,values:v,status:'Add',message:'Register lecturer'},key=scoreNorm_(v.LecturerID),prior=seen[key]||known[key];
     function conflict(message){r.status='Conflict';r.message=message;return r;}
@@ -20,7 +27,7 @@ function scoreDirectoryPlan_(book,data){
 }
 function scoreDirectoryCommit_(book,data){return scoreLock_(function(){
   const admin=scoreAdmin_(data.token),op=scoreText_(data.operationId);if(!/^[a-z0-9-]{20,80}$/i.test(op))throw new Error('Preview the lecturers again.');
-  const hash=scoreHash_(JSON.stringify(data.rows)),prior=scoreRead_(book,'ScoreDirectoryImports').filter(function(r){return r.OperationID===op;})[0];
+  const hash=scoreHash_(JSON.stringify(typeof data.names==='string'?{names:data.names}:data.rows)),prior=scoreRead_(book,'ScoreDirectoryImports').filter(function(r){return r.OperationID===op;})[0];
   if(prior){if(prior.PayloadHash!==hash)throw new Error('This retry differs from the original lecturer import.');return {success:true,added:Number(prior.RowCount),replayed:true};}
   const plan=scoreDirectoryPlan_(book,data);if(plan.counts.conflict)throw new Error('Resolve every lecturer conflict. Nothing was saved.');if(plan.revision!==data.revision)throw new Error('The lecturer directory changed. Preview again.');
   const adds=plan.rows.filter(function(r){return r.status==='Add';});if(!adds.length)return {success:true,added:0};const batch=Utilities.getUuid();
