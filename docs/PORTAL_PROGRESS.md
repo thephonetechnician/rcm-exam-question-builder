@@ -1,4 +1,18 @@
-# Portal checkpoint — 17 November 2026
+# Portal checkpoint — 18 November 2026
+
+## Separate admin activities and blank score rows
+
+Replaced anchor scrolling with five activity views and a left sidebar, current-page
+indication, URL fragments and mobile navigation. Activity data is loaded on first
+opening rather than all during login. Forms and the admin session persist between
+views. Lecturer registration/assignments remain grouped in their own activity.
+
+Both score fields may be blank; partial rows and wholly blank submissions fail.
+Blank rows stay in the submitted roster with empty scores/grade and null snapshot
+values. Explicit zero stays numeric and keeps its grade. Preview and PDF/XLSX
+downloads distinguish empty from zero; existing archives are unchanged. Replace
+module 09 and sync frontend assets; no schema changes or setup run are needed.
+See [installation and behavior](ADMIN_PAGES_AND_BLANK_SCORES.md).
 
 ## Comma-separated names and multi-course selection
 

@@ -20,9 +20,9 @@
       ['Course', s.course.code, s.course.title], ['Units', s.course.units, 'Session', s.course.session],
       ['Programme', s.course.programme, 'Class', s.course.level, 'Semester', s.course.semester],
       ['Lecturer', s.lecturerName, 'Exam date', s.examDate], ['Submission ID', s.submissionId],
-      ['Version', s.version, 'Submitted at', s.submittedAt], [],
+      ['Version', s.version, 'Submitted at', s.submittedAt], ['Blank scores mean no scores entered; they are not zero.'],
       ['No.','Matric number / student reference','Student name','CA','Exam','Total','Grade','Student source','Registration type','Addition reason'],
-      ...students.map((r, i) => [i + 1, r.matNo || r.ref, r.name, r.ca, r.exam, r.total, r.grade,r.source||'Registered roster',r.registrationType||'',r.reason||''])
+      ...students.map((r, i) => [i + 1, r.matNo || r.ref, r.name, r.ca??'', r.exam??'', r.total??'', r.grade??'',r.source||'Registered roster',r.registrationType||'',r.reason||''])
     ];
   }
   async function excelLogo(zip,data){
@@ -68,12 +68,13 @@
       `Lecturer: ${s.lecturerName} · Examination date: ${s.examDate}`,
       `Submission: ${s.submissionId} · Version ${s.version} · Submitted: ${s.submittedAt}`
     ];
+    if(s.students.some(r=>r.ca===null||r.ca===''))details.push('Blank scores mean no scores entered; they are not zero.');
     const manualCount=s.students.filter(r=>r.source==='Lecturer added').length;
     if(manualCount)details.push(`${manualCount} lecturer-added student(s), marked below for administrator review.`);
     doc.setFontSize(9); let y=32;
     for(const line of details){const lines=doc.splitTextToSize(line,268);doc.text(lines,14,y);y+=lines.length*4.5+2;}
     if(typeof doc.autoTable!=='function')throw new Error('PDF table library did not load. Refresh and try again.');
-    doc.autoTable({startY:y+2,head:[['No.','Matric number / reference','Student name','CA','Exam','Total','Grade']],body:s.students.map((r,i)=>[i+1,r.matNo||r.ref,r.name+(r.source==='Lecturer added'?' [Lecturer added]':''),r.ca,r.exam,r.total,r.grade]),styles:{font:'RCM',fontStyle:'normal',fontSize:9,cellPadding:2.8},headStyles:{fillColor:[27,42,74],fontStyle:'normal'},alternateRowStyles:{fillColor:[246,247,250]},margin:{bottom:16},didDrawPage:()=>{doc.setFont('RCM','normal');doc.setFontSize(8);doc.setTextColor(100);doc.text('RCM Examinations & Records · '+s.course.code+' · '+s.course.session+' · Version '+s.version+' · Page '+doc.internal.getNumberOfPages(),14,202);}});
+    doc.autoTable({startY:y+2,head:[['No.','Matric number / reference','Student name','CA','Exam','Total','Grade']],body:s.students.map((r,i)=>[i+1,r.matNo||r.ref,r.name+(r.source==='Lecturer added'?' [Lecturer added]':''),r.ca??'',r.exam??'',r.total??'',r.grade??'']),styles:{font:'RCM',fontStyle:'normal',fontSize:9,cellPadding:2.8},headStyles:{fillColor:[27,42,74],fontStyle:'normal'},alternateRowStyles:{fillColor:[246,247,250]},margin:{bottom:16},didDrawPage:()=>{doc.setFont('RCM','normal');doc.setFontSize(8);doc.setTextColor(100);doc.text('RCM Examinations & Records · '+s.course.code+' · '+s.course.session+' · Version '+s.version+' · Page '+doc.internal.getNumberOfPages(),14,202);}});
     save(doc.output('blob'), filename(s)+'.pdf');
   }
   window.ScoreExports = Object.freeze({excel,pdf,rows});

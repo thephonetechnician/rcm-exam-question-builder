@@ -1,10 +1,11 @@
 (() => {
   'use strict';
   const $=id=>document.getElementById(id);
-  let token='',expiryTimer,records=[],selected,archiving=false;
+  const pageLoads=new Map();let token='',expiryTimer,records=[],selected,archiving=false;
   function tell(text){$('admin-message').textContent=text;$('admin-message').hidden=!text;}
-  function reset(){token='';clearTimeout(expiryTimer);records=[];window.ScoreClassAdmin?.stop();window.ScoreWorkspace?.stop();window.BrandAdmin?.stop();$('admin-history-list').replaceChildren();$('admin-history-panel').hidden=true;$('admin-login-panel').hidden=false;$('admin-logout').hidden=true;$('archive-dialog').close();}
+  function reset(){window.AdminNavigation?.stop();pageLoads.clear();token='';clearTimeout(expiryTimer);records=[];window.ScoreClassAdmin?.stop();window.ScoreWorkspace?.stop();window.BrandAdmin?.stop();$('admin-history-list').replaceChildren();$('admin-history-panel').hidden=true;$('admin-login-panel').hidden=false;$('admin-logout').hidden=true;$('archive-dialog').close();}
   async function busy(button,label,fn){const old=button.textContent;button.disabled=true;button.textContent=label;try{await fn();}catch(error){if(/Administrator session expired/i.test(error.message))reset();tell(error.message);}finally{button.disabled=false;button.textContent=old;}}
+  async function openPage(page){const key=page==='scoring'||page==='lecturers'?'workspace':page;if(pageLoads.has(key))return;const session=token;const work=(async()=>{try{if(key==='branding')await window.BrandAdmin.start(session);else if(key==='classes')await window.ScoreClassAdmin.start(session);else if(key==='workspace')await window.ScoreWorkspace.start(session);else if(key==='history'){$('admin-history-panel').hidden=false;await history();}}catch(error){if(session===token){pageLoads.delete(key);tell(error.message);}}})();pageLoads.set(key,work);await work;}
   async function history(){const session=token;const data=await window.ScoreAPI.request({action:'score.admin.history',token:session});if(session!==token)return;records=data.submissions;render();}
   function render(){
     const term=$('admin-search').value.trim().toLowerCase();
@@ -31,7 +32,7 @@
     }));
   }
   $('admin-login-form').addEventListener('submit',event=>{event.preventDefault();busy($('admin-signin'),'Signing in…',async()=>{
-    try{const result=await window.ScoreAPI.request({action:'score.admin.login',key:$('admin-key').value});token=result.token;$('admin-login-panel').hidden=true;$('admin-history-panel').hidden=false;$('admin-logout').hidden=false;expiryTimer=setTimeout(()=>{reset();tell('Your administrator session expired. Sign in again.');},Math.max(0,result.expires-Date.now()));await history();await window.ScoreClassAdmin?.start(token);await window.ScoreWorkspace?.start(token);await window.BrandAdmin?.start(token);tell('Administrator access verified.');}finally{$('admin-key').value='';}
+    try{const result=await window.ScoreAPI.request({action:'score.admin.login',key:$('admin-key').value});token=result.token;window.AdminNavigation?.start(openPage);$('admin-login-panel').hidden=true;$('admin-logout').hidden=false;expiryTimer=setTimeout(()=>{reset();tell('Your administrator session expired. Sign in again.');},Math.max(0,result.expires-Date.now()));tell('Administrator access verified.');}finally{$('admin-key').value='';}
   });});
   $('admin-refresh').addEventListener('click',()=>busy($('admin-refresh'),'Refreshing…',history));
   $('admin-search').addEventListener('input',render);

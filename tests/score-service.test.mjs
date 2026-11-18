@@ -10,7 +10,7 @@ assert.equal(call({action:'score.catalogue'}).courses[0].locked,false);
 assert.throws(()=>context.seedScoreDemo_(),/empty Score tables/);
 const payload=()=>({action:'score.submit',operationId:randomUUID(),courseRef:'DEMO001',revision:load().revision,lecturerName:'Synthetic Lecturer',examDate:'2026-01-01',pin:'TEST-PIN-ONLY',entries:load().students.map(s=>({studentRef:s.ref,ca:'20',exam:'50',name:'FORGED NAME',matNo:'FORGED MATRIC'}))});
 let p=payload();
-for(const bad of ['',null,true,' ',31,-1,'NaN',1.001]){const x=structuredClone(p);x.entries[0].ca=bad;assert.throws(()=>call(x),/CA for/);}
+for(const bad of ['',null,true,' ',31,-1,'NaN',1.001]){const x=structuredClone(p);x.entries[0].ca=bad;assert.throws(()=>call(x),/CA for|Enter both/);}
 const duplicate=structuredClone(p);duplicate.entries[1].studentRef=duplicate.entries[0].studentRef;assert.throws(()=>call(duplicate),/duplicate student/);
 const unknown=structuredClone(p);unknown.entries[0].studentRef='NOT-REGISTERED';assert.throws(()=>call(unknown),/Missing scores/);
 const stale=structuredClone(p);stale.revision='stale';assert.throws(()=>call(stale),/changed/);

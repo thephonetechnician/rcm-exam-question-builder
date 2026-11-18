@@ -8,18 +8,18 @@
   <link rel="stylesheet" href="css/portal.css">
   <link rel="stylesheet" href="css/scores.css">
   <link rel="stylesheet" href="css/minimal-theme.css">
-  <link rel="stylesheet" href="css/academic-theme.css?v=2026-11-16.2">
-  <link rel="stylesheet" href="css/theme-palettes.css?v=2026-11-16.2">
-<script src="js/theme.js?v=2026-11-16.2"></script>
-  <script src="js/activity.js?v=2026-11-16.2" defer></script>
+  <link rel="stylesheet" href="css/academic-theme.css?v=2026-11-18.1">
+  <link rel="stylesheet" href="css/theme-palettes.css?v=2026-11-18.1">
+<script src="js/theme.js?v=2026-11-18.1"></script>
+  <script src="js/activity.js?v=2026-11-18.1" defer></script>
   <script defer src="assets/vendor/jszip.min.js"></script>
   <script defer src="assets/vendor/jspdf.umd.min.js"></script>
   <script defer src="assets/vendor/jspdf.plugin.autotable.min.js"></script>
   <script defer src="js/score-config.js"></script>
-  <script defer src="js/score-api.js?v=2026-11-16.2"></script><script defer src="js/branding.js?v=2026-11-16.2"></script>
+  <script defer src="js/score-api.js?v=2026-11-18.1"></script><script defer src="js/branding.js?v=2026-11-18.1"></script>
   <script defer src="js/score-order.js"></script>
-  <script defer src="js/score-exports.js?v=2026-11-16.2"></script>
-  <script defer src="js/score-submission.js"></script>
+  <script defer src="js/score-exports.js?v=2026-11-18.1"></script>
+  <script defer src="js/score-submission.js?v=2026-11-18.1"></script>
 </head>
 <body class="portal-theme">
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -42,7 +42,7 @@
         <p class="muted" id="score-limits"></p>
         <p class="muted score-mobile-hint">Swipe the table sideways to reach the CA and Exam fields.</p>
         <div class="score-table-wrap" tabindex="0" aria-label="Student score entry table"><table class="score-table"><thead><tr><th scope="col">No.</th><th scope="col">Matric number / reference</th><th scope="col">Student name</th><th scope="col" id="ca-heading">CA</th><th scope="col" id="exam-heading">Exam</th><th scope="col">Total</th></tr></thead><tbody id="score-rows"></tbody></table></div>
-        <p class="muted">A blank score is incomplete. Enter 0 only when zero is the correct score. Missing a student? Use Add student; additions are flagged for administrator review and do not change the permanent class register.</p>
+        <p class="muted">Leave both CA and exam blank for students not offering this course. A single missing score must be completed. Enter 0 only when zero is the correct score. Missing a student? Use Add student; additions are flagged for administrator review and do not change the permanent class register.</p>
         <div class="score-fields pin-fields"><div><label for="submit-pin">Create submission PIN</label><input id="submit-pin" type="password" minlength="8" maxlength="128" autocomplete="new-password" required><small>At least 8 characters. This PIN allows downloads only.</small></div><div><label for="confirm-pin">Confirm PIN</label><input id="confirm-pin" type="password" minlength="8" maxlength="128" autocomplete="new-password" required></div></div>
         <div class="score-warning"><strong>Submission is final.</strong> You cannot edit or delete submitted scores. Only the administrator can archive a version and reopen this course.</div>
         <button class="button primary" id="review-scores" type="submit">Preview score sheet →</button>

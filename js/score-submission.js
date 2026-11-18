@@ -36,13 +36,13 @@
     choices();
   }
   function updateProgress() {
-    let completed = 0;
+    let completed = 0,blank=0;
     for (const item of fields.values()) {
-      const filled = item.ca.value !== '' && item.exam.value !== '' && item.ca.validity.valid && item.exam.validity.valid;
+      const partial=(item.ca.value==='')!==(item.exam.value==='');item.ca.setCustomValidity(partial?'Enter both CA and exam, or leave both blank.':'');item.exam.setCustomValidity(partial?'Enter both CA and exam, or leave both blank.':'');if(item.ca.value===''&&item.exam.value==='')blank++;const filled = item.ca.value !== '' && item.exam.value !== '' && item.ca.validity.valid && item.exam.validity.valid;
       item.total.textContent = filled ? String(Math.round((Number(item.ca.value)+Number(item.exam.value))*100)/100) : '—';
       if (filled) completed++;
     }
-    $('entry-progress').textContent = `${completed} of ${fields.size} completed`;
+    $('entry-progress').textContent = `${completed} scored · ${blank} with no scores entered · ${fields.size} students`;
   }
   function orderRows(){
     current.students.sort(window.ScoreOrder.compare);
@@ -52,7 +52,7 @@
     const {config,students} = current;
     fields.clear();manualStudents.clear(); $('score-entry-form').reset();
     $('ca-heading').textContent = `CA / ${config.caMax}`; $('exam-heading').textContent = `Exam / ${config.examMax}`;
-    $('score-limits').textContent = `CA: 0–${config.caMax}. Examination: 0–${config.examMax}. Names and matric numbers come from the registered roster.`;
+    $('score-limits').textContent = `CA: 0–${config.caMax}. Examination: 0–${config.examMax}. Leave both CA and exam blank for a student not offering this course. Enter both scores for everyone else. Blank scores are not zero.`;
     // A date string uses the college timezone, not the browser's device timezone.
     $('score-date').max = new Intl.DateTimeFormat('en-CA',{timeZone:'Africa/Lagos',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     $('score-rows').replaceChildren(...students.map(scoreRow));
@@ -74,7 +74,7 @@
       const inputs = {};
       for (const [key,max] of [['ca',config.caMax],['exam',config.examMax]]) {
         const td=document.createElement('td'), input=document.createElement('input');
-        input.type='number'; input.inputMode='decimal'; input.min='0'; input.max=String(max); input.step='0.01'; input.required=true; input.placeholder=' '; input.setAttribute('aria-label',`${key === 'ca' ? 'CA' : 'Exam'} for ${s.name}`);
+        input.type='number'; input.inputMode='decimal'; input.min='0'; input.max=String(max); input.step='0.01'; input.required=false; input.placeholder=' '; input.setAttribute('aria-label',`${key === 'ca' ? 'CA' : 'Exam'} for ${s.name}`);
         input.addEventListener('input',()=>{dirty=true;pending=null;updateProgress();}); td.append(input); tr.append(td); inputs[key]=input;
       }
       const total=document.createElement('td'); total.className='score-total'; total.textContent='—';tr.append(total); fields.set(s.ref,{...inputs,total,row:tr}); return tr;
@@ -107,16 +107,16 @@
     if(pin!==$('confirm-pin').value){tell('The two PIN entries do not match.');$('confirm-pin').focus();return;}
     if(pin.trim()!==pin){tell('Remove spaces from the beginning or end of your PIN.');return;}
     if(!fields.size){tell('Add at least one student before submitting.');return;}
-    if(!pending)pending={action:'score.submit',operationId:crypto.randomUUID(),courseRef:current.course.ref,revision:current.revision,lecturerName:$('score-lecturer').value.trim(),examDate:$('score-date').value,pin,entries:Array.from(fields,([studentRef,f])=>({studentRef,ca:f.ca.value,exam:f.exam.value})),additions:Array.from(manualStudents.values())};
+    if(!Array.from(fields.values()).some(f=>f.ca.value!==''&&f.exam.value!=='')){tell('Enter scores for at least one student. Leave both fields blank for students not offering this course.');return;}if(!pending)pending={action:'score.submit',operationId:crypto.randomUUID(),courseRef:current.course.ref,revision:current.revision,lecturerName:$('score-lecturer').value.trim(),examDate:$('score-date').value,pin,entries:Array.from(fields,([studentRef,f])=>({studentRef,ca:f.ca.value,exam:f.exam.value})),additions:Array.from(manualStudents.values())};
     $('preview-course-title').textContent=`${current.course.code} · ${current.course.title}`;
     $('preview-course-meta').textContent=meta(current.course);
-    $('confirm-summary').textContent=`Lecturer: ${pending.lecturerName} · Examination date: ${pending.examDate} · ${current.students.length} students`;
+    $('confirm-summary').textContent=`Lecturer: ${pending.lecturerName} · Examination date: ${pending.examDate} · ${current.students.length} students · ${pending.entries.filter(e=>e.ca===''&&e.exam==='').length} with no scores entered`;
     $('preview-ca-heading').textContent=`CA / ${current.config.caMax}`;
     $('preview-exam-heading').textContent=`Exam / ${current.config.examMax}`;
     const entries=new Map(pending.entries.map(entry=>[entry.studentRef,entry]));
     $('preview-score-rows').replaceChildren(...current.students.map((student,index)=>{
-      const entry=entries.get(student.ref),ca=Number(entry.ca),exam=Number(entry.exam),tr=document.createElement('tr');
-      for(const value of [index+1,student.matNo||student.ref,student.name+(student.source==='Lecturer added'?' (Lecturer added)':''),ca,exam,Math.round((ca+exam)*100)/100]){
+      const entry=entries.get(student.ref),blank=entry.ca===''&&entry.exam==='',ca=blank?'':Number(entry.ca),exam=blank?'':Number(entry.exam),tr=document.createElement('tr');
+      for(const value of [index+1,student.matNo||student.ref,student.name+(student.source==='Lecturer added'?' (Lecturer added)':''),ca,exam,blank?'':Math.round((ca+exam)*100)/100]){
         const td=document.createElement('td');td.textContent=String(value);tr.append(td);
       }
       return tr;
@@ -147,7 +147,7 @@
       dirty=false; pending=null; current.locked=true; snapshot=null;
       $('confirm-dialog').close(); $('score-entry-form').reset(); $('score-entry-form').hidden=true; $('locked-course').hidden=false;
       $('course-state').textContent='Submitted · Locked';
-      $('locked-detail').textContent=`${data.saved} student scores saved. Version ${data.version}. Reference: ${data.submissionId}. Enter your PIN to download.`;
+      $('locked-detail').textContent=`${data.saved} student records saved. Version ${data.version}. Reference: ${data.submissionId}. Enter your PIN to download.`;
       tell('Scores submitted and locked successfully. Keep your PIN for future downloads.');
       courses=courses.map(c=>c.ref===current.course.ref?{...c,locked:true}:c); choices();
     } catch(error) { $('confirm-dialog').close(); throw error; }

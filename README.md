@@ -1,5 +1,9 @@
 # RCM Examinations & Records
 
+Admin activities now open individually from a left sidebar. Lecturers can leave
+both CA/exam blank for students not offering a course; blanks stay empty in saved
+score sheets and downloads. See [installation and behavior](docs/ADMIN_PAGES_AND_BLANK_SCORES.md).
+
 Administrators can register lecturers first through a downloadable Excel template
 or a single-lecturer form, then assign courses using the registered Lecturer ID.
 Existing assignments are preserved. See [lecturer directory setup](docs/LECTURER_DIRECTORY.md).
