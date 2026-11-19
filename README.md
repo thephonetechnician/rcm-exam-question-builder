@@ -1,5 +1,10 @@
 # RCM Examinations & Records
 
+The lecturer workspace loads settings, courses, lecturers and reports in one
+request. Backend helpers reuse sheet reads within that request, with fresh reads
+after writes and on subsequent requests. See [loading update installation and
+measurements](docs/LOADING_PERFORMANCE.md).
+
 Admin activities now open individually from a left sidebar. Lecturers can leave
 both CA/exam blank for students not offering a course; blanks stay empty in saved
 score sheets and downloads. See [installation and behavior](docs/ADMIN_PAGES_AND_BLANK_SCORES.md).

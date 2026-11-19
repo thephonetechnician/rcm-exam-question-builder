@@ -1,4 +1,16 @@
-# Portal checkpoint — 18 November 2026
+# Portal checkpoint — 19 November 2026
+
+## Reduced loading requests and repeated sheet reads
+
+Module 09 now scopes sheet-read reuse to one request, invalidating before writes
+and after write-lock acquisition. Module 13 adds an authenticated combined workspace
+action. Frontend workspace initialization/refresh now uses one request instead of
+four; directory registration avoids a redundant follow-up directory request.
+The synthetic 151-course benchmark reduces sheet data reads from 28 to 11 and
+verifies equivalent responses, authorization, mutation isolation and freshness.
+All regression tests pass; synthetic browser loading/registration refresh verified.
+No live timings or deployments were performed. Replace modules 09/13 and sync the
+frontend; see [installation and measurements](LOADING_PERFORMANCE.md).
 
 ## Separate admin activities and blank score rows
 

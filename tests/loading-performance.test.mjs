@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {createScoreHarness} from './helpers/score-harness.mjs';
+const {context:c,book,props,sheets}=createScoreHarness();c.setupScoreMvp_();c.seedScoreDemo_();
+props.set('SCORE_ADMIN_KEY','SYNTHETIC-PERFORMANCE-ADMIN');c.configureScoreAdmin_();
+const token=c.scoreRoute_({action:'score.admin.login',key:'SYNTHETIC-PERFORMANCE-ADMIN'}).token;
+c.scoreAppend_(book,'ScoreCourses',Array.from({length:150},(_,i)=>['PERF'+i,'PERF'+i,'Performance course '+i,2,'2026/2027','1','DEMO','Test Class']));
+let counts=new Map();for(const [name,sheet] of sheets){const original=sheet.getDataRange;sheet.getDataRange=()=>{counts.set(name,(counts.get(name)||0)+1);return original();};}
+const oldActions=['score.admin.settings','score.admin.assignments.context','score.admin.lecturers.list','score.admin.assignments.report'];
+const old=oldActions.map(action=>c.scoreRouteImpl_({action,semester:'1',token})),baseline=[...counts.values()].reduce((a,b)=>a+b,0);
+counts.clear();const bundle=c.scoreRoute_({action:'score.admin.assignments.workspace',semester:'1',token}),optimized=[...counts.values()].reduce((a,b)=>a+b,0);
+assert.deepEqual(JSON.parse(JSON.stringify(bundle.config)),JSON.parse(JSON.stringify(old[0].config)));
+assert.deepEqual(JSON.parse(JSON.stringify(bundle.context)),JSON.parse(JSON.stringify({session:old[1].session,semester:old[1].semester,courses:old[1].courses})));
+assert.deepEqual(JSON.parse(JSON.stringify(bundle.lecturers)),JSON.parse(JSON.stringify(old[2].lecturers)));
+assert.deepEqual(JSON.parse(JSON.stringify(bundle.report)),JSON.parse(JSON.stringify(old[3])));
+assert.ok(optimized<baseline);for(const [name,count] of counts)assert.equal(count,1,name+' read at most once per request');
+assert.throws(()=>c.scoreRoute_({action:'score.admin.assignments.workspace',semester:'1'}),/Administrator session/);
+const impl=c.scoreRouteImpl_;c.scoreRouteImpl_=()=>{const first=c.scoreRead_(book,'ScoreCourses');first[0].Title='Temporary mutation';assert.notEqual(c.scoreRead_(book,'ScoreCourses')[0].Title,first[0].Title);c.scoreAppend_(book,'ScoreCourses',[['FRESH','FRESH','Fresh course',2,'2026/2027','1','DEMO','Test Class']]);assert.equal(c.scoreRead_(book,'ScoreCourses').length,152);return {success:true};};c.scoreRoute_({});c.scoreRouteImpl_=impl;
+const originalLock=c.LockService.getScriptLock;c.LockService.getScriptLock=()=>{const lock=originalLock();return {...lock,waitLock:()=>{lock.waitLock();sheets.get('ScoreCourses').data[1][2]='Changed while waiting';}};};
+c.scoreRouteImpl_=()=>{c.scoreRead_(book,'ScoreCourses');return c.scoreLock_(()=>{assert.equal(c.scoreRead_(book,'ScoreCourses')[0].Title,'Changed while waiting');return {success:true};});};c.scoreRoute_({});c.LockService.getScriptLock=originalLock;c.scoreRouteImpl_=impl;
+const previous=bundle.context.courses.length;assert.equal(c.scoreRoute_({action:'score.admin.assignments.workspace',semester:'1',token}).context.courses.length,previous+1);
+console.log(`PASS: 151-course workspace reduces four requests to one and sheet reads ${baseline} → ${optimized}; equivalent data, authentication, isolated reads, post-write and post-lock freshness.`);

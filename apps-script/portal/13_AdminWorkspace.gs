@@ -90,6 +90,7 @@ function scoreAssignmentReport_(book,semester){
   return {success:true,session:ctx.session,semester:ctx.semester,courses:courses,lecturers:Object.keys(lecturers).map(function(k){return lecturers[k];}),paperTrackingAvailable:papers.available,paperTrackingMessage:papers.message};
 }
 function scoreWorkspaceRoute_(book,data){
+  if(data.action==='score.admin.assignments.workspace')return {success:true,config:scoreConfig_(book),context:scoreAssignmentContext_(book,data.semester),lecturers:scoreLecturerDirectory_(book),report:scoreAssignmentReport_(book,data.semester)};
   if(data.action==='score.admin.settings')return {success:true,config:scoreConfig_(book)};
   if(data.action==='score.admin.settings.save')return scoreSettingsSave_(book,data);
   if(data.action==='score.admin.assignments.context')return Object.assign({success:true},scoreAssignmentContext_(book,data.semester));

@@ -28,17 +28,23 @@ function scoreBook_() {
   if (!id) throw new Error('The score spreadsheet is not configured.');
   return SpreadsheetApp.openById(id);
 }
+// Never shared between requests. Writes and lock acquisition discard the snapshot.
+let scoreReadContext_=null;
 function scoreRead_(book, name) {
+  let tables;
+  if(scoreReadContext_){tables=scoreReadContext_.get(book);if(!tables){tables=new Map();scoreReadContext_.set(book,tables);}if(tables.has(name))return tables.get(name).map(function(r){return Object.assign({},r);});}
   const sh=book.getSheetByName(name);
   if(!sh) throw new Error('Run setupScoreMvp_ first. Missing tab: '+name);
   const values=sh.getDataRange().getValues();
   const headers=(values.shift()||[]).map(String);
   const expected=SCORE_TABLES_[name];
   if(expected && (headers.length!==expected.length || expected.some(function(h,i){return h!==headers[i];}))) throw new Error('Unexpected headers in '+name+'. Do not rename columns.');
-  return values.filter(function(r){return r.some(function(v){return v!=='';});}).map(function(r){const o={};headers.forEach(function(h,i){o[h]=r[i];});return o;});
+  const rows=values.filter(function(r){return r.some(function(v){return v!=='';});}).map(function(r){const o={};headers.forEach(function(h,i){o[h]=r[i];});return o;});
+  if(tables)tables.set(name,rows);return rows.map(function(r){return Object.assign({},r);});
 }
 function scoreAppend_(book,name,rows) {
   if(!rows.length) return;
+  if(scoreReadContext_)scoreReadContext_.clear();
   const sh=book.getSheetByName(name), width=rows[0].length;
   const first=sh.getLastRow()+1;
   if(sh.getMaxRows()<first+rows.length-1) sh.insertRowsAfter(sh.getMaxRows(),first+rows.length-1-sh.getMaxRows());
@@ -46,7 +52,7 @@ function scoreAppend_(book,name,rows) {
   const safe=rows.map(function(r){return r.map(function(v){return typeof v==='string'&&/^[=+\-@]/.test(v)?"'"+v:v;});});
   sh.getRange(first,1,rows.length,width).setNumberFormat('@').setValues(safe);
 }
-function scoreLock_(fn) { const lock=LockService.getScriptLock();lock.waitLock(20000);try{return fn();}finally{lock.releaseLock();} }
+function scoreLock_(fn) { const lock=LockService.getScriptLock();lock.waitLock(20000);if(scoreReadContext_)scoreReadContext_.clear();try{return fn();}finally{lock.releaseLock();} }
 function scoreConfig_(book) {
   const rows=scoreRead_(book,'Config'), lookup={};
   rows.forEach(function(r){lookup[scoreText_(r.Key)]=r.Value;});
@@ -212,6 +218,9 @@ function scoreArchive_(book,data) {
   });
 }
 function scoreRoute_(data) {
+  const previous=scoreReadContext_;scoreReadContext_=new Map();try{return scoreRouteImpl_(data);}finally{scoreReadContext_=previous;}
+}
+function scoreRouteImpl_(data) {
   if(data.action==='score.admin.login')return scoreAdminLogin_(data);
   const book=scoreBook_();
   if(data.action.indexOf('score.admin.lecturers.')===0){scoreAdmin_(data.token);return scoreDirectoryRoute_(book,data);}

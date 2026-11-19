@@ -1,6 +1,6 @@
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
-for(const name of ['portal-auth.test.mjs','score-service.test.mjs','blank-scores.test.mjs','class-management.test.mjs','assignment-corrections.test.mjs','bulk-assignments.test.mjs','lecturer-workspace.test.mjs','lecturer-directory.test.mjs','lecturer-bulk-names.test.mjs','branding.test.mjs','branding-exports.test.mjs','score-imports.test.mjs','score-exports.test.mjs','exam-document-layout.test.mjs','exam-download-ui.test.mjs','theme.test.mjs','activity.test.mjs']){
+for(const name of ['portal-auth.test.mjs','score-service.test.mjs','blank-scores.test.mjs','loading-performance.test.mjs','class-management.test.mjs','assignment-corrections.test.mjs','bulk-assignments.test.mjs','lecturer-workspace.test.mjs','lecturer-directory.test.mjs','lecturer-bulk-names.test.mjs','branding.test.mjs','branding-exports.test.mjs','score-imports.test.mjs','score-exports.test.mjs','exam-document-layout.test.mjs','exam-download-ui.test.mjs','theme.test.mjs','activity.test.mjs']){
   const result=spawnSync(process.execPath,[fileURLToPath(new URL(name,import.meta.url))],{stdio:'inherit'});
   if(result.error){console.error(result.error.message);process.exit(1);}
   if(result.status!==0)process.exit(result.status||1);
