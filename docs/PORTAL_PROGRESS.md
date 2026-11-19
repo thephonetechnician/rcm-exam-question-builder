@@ -1,5 +1,15 @@
 # Portal checkpoint — 19 November 2026
 
+## Assigned lecturer names on score sheets
+
+Module 09 returns the committed course lecturer on score entry and enforces their
+name when saving. The assignment participates in revision checks, so changed
+assignments invalidate open drafts. Frontend fills a read-only name for assigned
+courses and retains required manual names only for unassigned courses. PIN exports
+and archives retain the saved name. Tests and synthetic browser course-switching
+checks passed. Replace module 09 and sync frontend; see
+[installation](ASSIGNED_SCORE_LECTURERS.md). No live deployment performed.
+
 ## Reduced loading requests and repeated sheet reads
 
 Module 09 now scopes sheet-read reuse to one request, invalidating before writes

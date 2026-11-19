@@ -7,6 +7,10 @@ import { createScoreHarness } from './helpers/score-harness.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const {context,props}=createScoreHarness();
 context.setupScoreMvp_();context.seedScoreDemo_();
+if(process.argv.includes('--assigned')){
+  context.scoreAppend_(context.scoreBook_(),'ScoreLecturerAssignments',[['QA-ASSIGNED','L0001','Synthetic Assigned Lecturer','DEMO001','2026/2027','1']]);
+  context.scoreAppend_(context.scoreBook_(),'ScoreLecturerImports',[['QA-OPERATION','QA-ASSIGNED','QA-HASH',1,'2026-01-01','test-admin']]);
+}
 context.scoreAppend_(context.scoreBook_(),'ScoreCourses',[['DEMO002','DEMO102','Second Demonstration Course',2,'2026/2027','1','DEMO','Test Class']]);
 props.set('SCORE_ADMIN_KEY','SYNTHETIC-ADMIN-KEY-ONLY-12345');context.configureScoreAdmin_();
 const types={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.jpg':'image/jpeg','.ttf':'font/ttf'};

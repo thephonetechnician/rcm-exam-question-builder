@@ -51,6 +51,9 @@
   function showEntry() {
     const {config,students} = current;
     fields.clear();manualStudents.clear(); $('score-entry-form').reset();
+    const lecturer=$('score-lecturer'),assigned=current.assignedLecturer;
+    lecturer.value=assigned?assigned.name:'';lecturer.readOnly=Boolean(assigned);lecturer.required=!assigned;
+    $('score-lecturer-help').textContent=assigned?'Assigned by the administrator. This name will appear on the submitted score sheet.':'No lecturer is assigned to this course. Enter your full name.';
     $('ca-heading').textContent = `CA / ${config.caMax}`; $('exam-heading').textContent = `Exam / ${config.examMax}`;
     $('score-limits').textContent = `CA: 0–${config.caMax}. Examination: 0–${config.examMax}. Leave both CA and exam blank for a student not offering this course. Enter both scores for everyone else. Blank scores are not zero.`;
     // A date string uses the college timezone, not the browser's device timezone.
@@ -107,7 +110,7 @@
     if(pin!==$('confirm-pin').value){tell('The two PIN entries do not match.');$('confirm-pin').focus();return;}
     if(pin.trim()!==pin){tell('Remove spaces from the beginning or end of your PIN.');return;}
     if(!fields.size){tell('Add at least one student before submitting.');return;}
-    if(!Array.from(fields.values()).some(f=>f.ca.value!==''&&f.exam.value!=='')){tell('Enter scores for at least one student. Leave both fields blank for students not offering this course.');return;}if(!pending)pending={action:'score.submit',operationId:crypto.randomUUID(),courseRef:current.course.ref,revision:current.revision,lecturerName:$('score-lecturer').value.trim(),examDate:$('score-date').value,pin,entries:Array.from(fields,([studentRef,f])=>({studentRef,ca:f.ca.value,exam:f.exam.value})),additions:Array.from(manualStudents.values())};
+    if(!Array.from(fields.values()).some(f=>f.ca.value!==''&&f.exam.value!=='')){tell('Enter scores for at least one student. Leave both fields blank for students not offering this course.');return;}if(!pending)pending={action:'score.submit',operationId:crypto.randomUUID(),courseRef:current.course.ref,revision:current.revision,lecturerName:current.assignedLecturer?current.assignedLecturer.name:$('score-lecturer').value.trim(),examDate:$('score-date').value,pin,entries:Array.from(fields,([studentRef,f])=>({studentRef,ca:f.ca.value,exam:f.exam.value})),additions:Array.from(manualStudents.values())};
     $('preview-course-title').textContent=`${current.course.code} · ${current.course.title}`;
     $('preview-course-meta').textContent=meta(current.course);
     $('confirm-summary').textContent=`Lecturer: ${pending.lecturerName} · Examination date: ${pending.examDate} · ${current.students.length} students · ${pending.entries.filter(e=>e.ca===''&&e.exam==='').length} with no scores entered`;

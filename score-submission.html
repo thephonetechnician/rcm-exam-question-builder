@@ -19,7 +19,7 @@
   <script defer src="js/score-api.js?v=2026-11-19.1"></script><script defer src="js/branding.js?v=2026-11-19.1"></script>
   <script defer src="js/score-order.js"></script>
   <script defer src="js/score-exports.js?v=2026-11-19.1"></script>
-  <script defer src="js/score-submission.js?v=2026-11-19.1"></script>
+  <script defer src="js/score-submission.js?v=2026-11-19.2"></script>
 </head>
 <body class="portal-theme">
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -37,7 +37,7 @@
     <section id="selected-course" class="score-panel" aria-labelledby="selected-title" hidden>
       <div class="section-heading"><div><p class="eyebrow" id="selected-code"></p><h2 id="selected-title"></h2><p id="selected-meta"></p></div><span class="badge" id="course-state"></span></div>
       <form id="score-entry-form" hidden>
-        <div class="score-fields"><div><label for="score-lecturer">Lecturer full name</label><input id="score-lecturer" required minlength="2" maxlength="150" autocomplete="name"></div><div><label for="score-date">Date examination was written</label><input id="score-date" type="date" required></div></div>
+        <div class="score-fields"><div><label for="score-lecturer">Lecturer full name</label><input id="score-lecturer" aria-describedby="score-lecturer-help" required minlength="2" maxlength="150" autocomplete="name"><small id="score-lecturer-help"></small></div><div><label for="score-date">Date examination was written</label><input id="score-date" type="date" required></div></div>
         <div class="score-roster-heading"><h3>Student score sheet</h3><span id="entry-progress" aria-live="polite">0 completed</span><button id="open-add-student" class="button secondary" type="button">+ Add student</button></div>
         <p class="muted" id="score-limits"></p>
         <p class="muted score-mobile-hint">Swipe the table sideways to reach the CA and Exam fields.</p>

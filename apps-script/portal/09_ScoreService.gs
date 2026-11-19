@@ -101,7 +101,15 @@ function scoreRoster_(book,ref) {
   if(roster.length>1000)throw new Error('This roster exceeds the first-release limit of 1,000 students.');
   return roster;
 }
-function scoreRevision_(course,students,cfg) {return scoreHash_(JSON.stringify({course:course,students:students,caMax:cfg.caMax,examMax:cfg.examMax,grades:cfg.grades}));}
+function scoreSubmissionLecturer_(book,course){
+  const rows=scoreLecturerAssignments_(book).filter(function(r){return r.CourseRef===course.ref&&r.Session===course.session&&r.Semester===course.semester;});
+  if(rows.length>1)throw new Error('This course has conflicting lecturer assignments. Contact the administrator.');
+  if(!rows.length)return null;
+  const name=scoreText_(rows[0].LecturerName),id=scoreText_(rows[0].LecturerID);
+  if(!id||name.length<2||name.length>150)throw new Error('The assigned lecturer details are incomplete. Contact the administrator.');
+  return {id:id,name:name};
+}
+function scoreRevision_(course,students,cfg,lecturer) {return scoreHash_(JSON.stringify({course:course,students:students,caMax:cfg.caMax,examMax:cfg.examMax,grades:cfg.grades,assignedLecturer:lecturer||null}));}
 function scoreCatalogue_(book) {
   const cfg=scoreConfig_(book),submissions=scoreRead_(book,'ScoreSubmissions'),events=scoreRead_(book,'ScoreHistory');
   const archived={};events.forEach(function(e){if(e.Action==='Archived')archived[e.SubmissionID]=true;});
@@ -116,8 +124,8 @@ function scoreCatalogue_(book) {
 function scoreLoad_(book,ref) {
   const course=scoreCourse_(book,ref),latest=scoreLatest_(book,ref),cfg=scoreConfig_(book);
   if(latest&&!latest.archived)return {success:true,locked:true,course:course};
-  const students=scoreRoster_(book,ref);
-  return {success:true,locked:false,course:course,students:students,revision:scoreRevision_(course,students,cfg),config:{caMax:cfg.caMax,examMax:cfg.examMax,open:cfg.open}};
+  const students=scoreRoster_(book,ref),lecturer=scoreSubmissionLecturer_(book,course);
+  return {success:true,locked:false,course:course,students:students,assignedLecturer:lecturer,revision:scoreRevision_(course,students,cfg,lecturer),config:{caMax:cfg.caMax,examMax:cfg.examMax,open:cfg.open}};
 }
 function scoreSafePin_(pin) {if(typeof pin!=='string'||pin.length<8||pin.length>128||pin.trim()!==pin)throw new Error('Use a PIN of 8–128 characters without leading or trailing spaces.');return pin;}
 function scoreScore_(v,max,label) {if((typeof v!=='number'&&typeof v!=='string')||String(v).trim()===''||!Number.isFinite(Number(v))||Number(v)<0||Number(v)>max||Math.abs(Math.round(Number(v)*100)-Number(v)*100)>1e-8)throw new Error(label+' must be between 0 and '+max+' with at most two decimal places.');return Number(v);}
@@ -134,11 +142,12 @@ function scoreSubmit_(book,data) {
     const course=scoreCourse_(book,ref),latest=scoreLatest_(book,ref);
     if(latest&&!latest.archived)throw new Error('This course is already submitted and locked. Use your PIN to download it.');
     const registered=scoreRoster_(book,ref);
-    if(data.revision!==scoreRevision_(course,registered,cfg))throw new Error('The course, roster or marking settings changed. Reload the course and review the scores.');
+    const assignedLecturer=scoreSubmissionLecturer_(book,course);
+    if(data.revision!==scoreRevision_(course,registered,cfg,assignedLecturer))throw new Error('The course, roster, lecturer assignment or marking settings changed. Reload the course and review the scores.');
     const additions=scoreValidateAdditions_(book,data.additions||[],registered);
     const students=registered.concat(additions).sort(scoreStudentOrder_);
     if(!students.length||students.length>1000)throw new Error('Submit between 1 and 1,000 students.');
-    const lecturer=scoreText_(data.lecturerName);if(lecturer.length<2||lecturer.length>150)throw new Error('Enter the lecturer’s full name (2–150 characters).');
+    const lecturer=assignedLecturer?assignedLecturer.name:scoreText_(data.lecturerName);if(lecturer.length<2||lecturer.length>150)throw new Error('Enter the lecturer’s full name (2–150 characters).');
     const date=scoreText_(data.examDate),parsed=new Date(date+'T12:00:00Z');
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||isNaN(parsed.getTime())||parsed.toISOString().slice(0,10)!==date||date>Utilities.formatDate(new Date(),'Africa/Lagos','yyyy-MM-dd'))throw new Error('Enter a valid examination date that is not in the future.');
     const byRef={};data.entries.forEach(function(e){if(!e||typeof e.studentRef!=='string'||byRef[e.studentRef])throw new Error('Invalid or duplicate student score.');byRef[e.studentRef]=e;});
