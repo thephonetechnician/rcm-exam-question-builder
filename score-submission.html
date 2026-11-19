@@ -9,8 +9,8 @@
   <link rel="stylesheet" href="css/scores.css">
   <link rel="stylesheet" href="css/minimal-theme.css">
   <link rel="stylesheet" href="css/academic-theme.css?v=2026-11-19.1">
-  <link rel="stylesheet" href="css/theme-palettes.css?v=2026-11-19.1">
-<script src="js/theme.js?v=2026-11-19.1"></script>
+  <link rel="stylesheet" href="css/theme-palettes.css?v=2026-11-19.3">
+<script src="js/theme.js?v=2026-11-19.3"></script>
   <script src="js/activity.js?v=2026-11-19.1" defer></script>
   <script defer src="assets/vendor/jszip.min.js"></script>
   <script defer src="assets/vendor/jspdf.umd.min.js"></script>
@@ -19,23 +19,23 @@
   <script defer src="js/score-api.js?v=2026-11-19.1"></script><script defer src="js/branding.js?v=2026-11-19.1"></script>
   <script defer src="js/score-order.js"></script>
   <script defer src="js/score-exports.js?v=2026-11-19.1"></script>
-  <script defer src="js/score-submission.js?v=2026-11-19.2"></script>
-</head>
+  <script defer src="js/score-submission.js?v=2026-11-19.3"></script>
+<style>.course-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px}.course-pagination .button{width:auto}.course-pagination span{font-size:13px;color:var(--muted)}#selected-title:focus-visible{outline:2px solid currentColor;outline-offset:4px}</style></head>
 <body class="portal-theme">
   <a class="skip-link" href="#main">Skip to main content</a>
-  <header class="score-header"><a class="brand" href="index.html"><img src="assets/rcm-logo.jpg" alt="" width="52" height="52"><span><span class="institution">Redeemed College of Missions</span><span class="portal-name">RCM Examinations &amp; Records</span></span></a><div class="header-actions"><a class="text-link" href="index.html">← Workspace home</a><label class="theme-picker"><span>Theme</span><select data-theme-style aria-label="Colour theme"><option value="aurora">Aurora</option><option value="classic">Classic College</option><option value="ocean">Ocean</option></select></label><button class="theme-toggle" data-theme-toggle type="button" hidden>Night mode</button></div></header>
+  <header class="score-header"><a class="brand" href="index.html"><img src="assets/rcm-logo.jpg" alt="" width="52" height="52"><span><span class="institution">Redeemed College of Missions</span><span class="portal-name">RCM Examinations &amp; Records</span></span></a><div class="header-actions"><a class="text-link" href="index.html">← Workspace home</a><label class="theme-picker"><span>Theme</span><select data-theme-style aria-label="Colour theme"><option value="aurora">Aurora</option><option value="classic">Classic College</option><option value="ocean">Ocean</option><option value="minimal">Minimal</option></select></label><button class="theme-toggle" data-theme-toggle type="button" hidden>Night mode</button></div></header>
   <main id="main" class="score-main">
     <div class="page-intro"><div><p class="eyebrow">RESULT SUBMISSION</p><h1>From your class to the record.</h1><p>Select a course, enter scores and submit once. No lecturer sign-in required.</p></div><span class="term-label" id="score-session">Loading session…</span></div>
     <ol class="score-steps" aria-label="Submission workflow"><li>Select your course</li><li>Enter and review scores</li><li>Lock and download</li></ol>
     <p id="score-message" class="notice" role="status" aria-live="polite" hidden></p>
-    <section class="score-panel" aria-labelledby="search-title">
+    <section id="course-catalogue" class="score-panel" aria-labelledby="search-title">
       <div class="section-heading"><div><h2 id="search-title">Find your course</h2><p>Search by code, title, programme or class. Check the session and semester carefully.</p></div><button id="refresh-courses" class="button secondary" type="button">Refresh courses</button></div>
       <label for="course-search">Course search</label><input type="search" id="course-search" placeholder="For example: CRS 101 or 100 Level" autocomplete="off">
-      <p id="catalogue-status" class="muted" role="status">Loading courses…</p>
-      <div id="score-course-list" class="course-grid"></div>
+      <div class="score-fields"><div><label for="course-programme">Programme</label><select id="course-programme"><option value="">All programmes</option></select></div><div><label for="course-level">Class / level</label><select id="course-level"><option value="">All classes</option></select></div></div><p><button type="button" class="button secondary" id="resume-course" hidden>Return to current score sheet</button></p><p id="catalogue-status" class="muted" role="status">Loading courses…</p>
+      <div id="score-course-list" class="course-grid"></div><nav id="course-pagination" class="course-pagination" aria-label="Course result pages" hidden><button type="button" id="course-previous" class="button secondary">Previous</button><span id="course-page-status" role="status"></span><button type="button" id="course-next" class="button secondary">Next</button></nav>
     </section>
     <section id="selected-course" class="score-panel" aria-labelledby="selected-title" hidden>
-      <div class="section-heading"><div><p class="eyebrow" id="selected-code"></p><h2 id="selected-title"></h2><p id="selected-meta"></p></div><span class="badge" id="course-state"></span></div>
+      <p><button type="button" class="button secondary" id="change-course">← Choose another course</button></p><div class="section-heading"><div><p class="eyebrow" id="selected-code"></p><h2 id="selected-title" tabindex="-1"></h2><p id="selected-meta"></p></div><span class="badge" id="course-state"></span></div>
       <form id="score-entry-form" hidden>
         <div class="score-fields"><div><label for="score-lecturer">Lecturer full name</label><input id="score-lecturer" aria-describedby="score-lecturer-help" required minlength="2" maxlength="150" autocomplete="name"><small id="score-lecturer-help"></small></div><div><label for="score-date">Date examination was written</label><input id="score-date" type="date" required></div></div>
         <div class="score-roster-heading"><h3>Student score sheet</h3><span id="entry-progress" aria-live="polite">0 completed</span><button id="open-add-student" class="button secondary" type="button">+ Add student</button></div>

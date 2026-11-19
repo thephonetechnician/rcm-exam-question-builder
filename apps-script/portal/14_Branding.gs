@@ -10,7 +10,7 @@ function scoreBranding_(book){
 function scoreBrandingSave_(book,data){return scoreLock_(function(){
   const admin=scoreAdmin_(data.token),current=scoreBranding_(book),logo=data.logoData,theme=data.defaultTheme;
   if(data.revision!==current.revision)throw new Error('Branding changed. Reload the settings before saving.');
-  if(!['aurora','classic','ocean'].includes(theme))throw new Error('Choose Aurora, Classic College or Ocean.');
+  if(!['aurora','classic','ocean','minimal'].includes(theme))throw new Error('Choose Aurora, Classic College, Ocean or Minimal.');
   if(typeof logo!=='string'||logo.length>40000||logo&&!/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(logo))throw new Error('Upload a supported image through the logo picker.');
   if(logo){
     const bytes=Utilities.base64Decode(logo.slice(22)).map(function(b){return b&255;}),signature=[137,80,78,71,13,10,26,10];

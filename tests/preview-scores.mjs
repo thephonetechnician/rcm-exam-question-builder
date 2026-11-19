@@ -12,6 +12,7 @@ if(process.argv.includes('--assigned')){
   context.scoreAppend_(context.scoreBook_(),'ScoreLecturerImports',[['QA-OPERATION','QA-ASSIGNED','QA-HASH',1,'2026-01-01','test-admin']]);
 }
 context.scoreAppend_(context.scoreBook_(),'ScoreCourses',[['DEMO002','DEMO102','Second Demonstration Course',2,'2026/2027','1','DEMO','Test Class']]);
+if(process.argv.includes('--many'))context.scoreAppend_(context.scoreBook_(),'ScoreCourses',Array.from({length:48},(_,i)=>['QA'+i,'QA'+String(i).padStart(3,'0'),'Synthetic course '+i,2,'2026/2027','1',i%2?'Diploma':'DEMO',i%2?'200 Level':'Test Class']));
 props.set('SCORE_ADMIN_KEY','SYNTHETIC-ADMIN-KEY-ONLY-12345');context.configureScoreAdmin_();
 const types={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.jpg':'image/jpeg','.ttf':'font/ttf'};
 const client="window.ScoreAPI=Object.freeze({request:async payload=>{const end=window.RCMActivity?.begin('Loading test data. Please wait…')||(()=>{});try{if(location.search.includes('slow'))await new Promise(r=>setTimeout(r,1800));const response=await fetch('/__test-api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const data=await response.json();if(!data.success)throw new Error(data.error);return data;}finally{end();}}});";

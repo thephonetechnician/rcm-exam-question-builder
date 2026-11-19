@@ -1,7 +1,7 @@
 /* Local-only appearance preference. Run in <head> before the first paint. */
 (() => {
   const key = 'rcm-appearance';
-  const paletteKey='rcm-theme-style',palettes=['aurora','classic','ocean'];let paletteChoice=null,schoolDefault='aurora';
+  const paletteKey='rcm-theme-style',palettes=['aurora','classic','ocean','minimal'];let paletteChoice=null,schoolDefault='aurora';
   try{const saved=localStorage.getItem(paletteKey);if(palettes.includes(saved))paletteChoice=saved;}catch(_){}
   const root = document.documentElement;
   const system = window.matchMedia('(prefers-color-scheme: dark)');

@@ -16,4 +16,5 @@ assert.ok(!JSON.stringify(call({action:'score.branding'})).includes('SYNTHETIC-B
 assert.throws(()=>save({}),/Branding changed/);
 const restored=save({revision:saved.revision,logoData:'',defaultTheme:'classic'});assert.equal(restored.logoData,'');assert.equal(restored.defaultTheme,'classic');
 assert.equal(sheets.get('ScorePortalSettings').data.length,3,'Keep append-only branding audit history');
+const minimal=save({revision:restored.revision,logoData:'',defaultTheme:'minimal'});assert.equal(minimal.defaultTheme,'minimal');assert.equal(call({action:'score.branding'}).defaultTheme,'minimal');
 console.log('PASS: shared branding read, admin-only publication, PNG validation, theme allowlist, stale-save protection and original-logo recovery.');

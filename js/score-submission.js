@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
-  let courses = [], current, snapshot, pending, dirty = false, submitting = false, seq = 0;
+  let coursePage=1;const pageSize=6;let courses = [], current, snapshot, pending, dirty = false, submitting = false, seq = 0;
   const fields = new Map(),manualStudents=new Map();
   const tell = text => { $('score-message').textContent = text; $('score-message').hidden = !text; };
   function downloadFeedback(text, success=false) {
@@ -18,9 +18,10 @@
   }
   function choices() {
     const term = $('course-search').value.trim().toLowerCase();
-    const found = courses.filter(c => [c.code,c.title,c.programme,c.level,c.session,c.semester].join(' ').toLowerCase().includes(term));
-    $('catalogue-status').textContent = courses.length ? `${found.length} matching course${found.length === 1 ? '' : 's'}` : 'No courses are loaded yet. The administrator must import course and student data first.';
-    $('score-course-list').replaceChildren(...found.map(c => {
+    const found = courses.filter(c => (!$('course-programme').value||c.programme===$('course-programme').value)&&(!$('course-level').value||c.level===$('course-level').value)&& [c.code,c.title,c.programme,c.level,c.session,c.semester].join(' ').toLowerCase().includes(term));
+    const pages=Math.max(1,Math.ceil(found.length/pageSize));coursePage=Math.min(coursePage,pages);const offset=(coursePage-1)*pageSize;$('course-pagination').hidden=found.length<=pageSize;$('course-previous').disabled=coursePage===1;$('course-next').disabled=coursePage===pages;$('course-page-status').textContent=`Page ${coursePage} of ${pages}`;
+    $('catalogue-status').textContent = courses.length ? `${found.length} matching course${found.length === 1 ? '' : 's'}${found.length?' · Showing '+(offset+1)+'–'+Math.min(offset+pageSize,found.length):' · Try another search or filter'}` : 'No courses are loaded yet. The administrator must import course and student data first.';
+    $('score-course-list').replaceChildren(...found.slice(offset,offset+pageSize).map(c => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'score-course-choice'; button.setAttribute('aria-pressed', String(current?.course.ref === c.ref));
       const badge = document.createElement('span'); badge.className = 'badge ' + (c.locked ? '' : 'ready'); badge.textContent = c.locked ? 'Submitted · Locked' : 'Score entry';
       const code = document.createElement('span'); code.className = 'course-code'; code.textContent = c.code;
@@ -30,7 +31,7 @@
     }));
   }
   async function catalogue() {
-    const data = await window.ScoreAPI.request({action:'score.catalogue'}); courses = data.courses;
+    const data = await window.ScoreAPI.request({action:'score.catalogue'}); courses = data.courses;for(const [id,key,label] of [['course-programme','programme','All programmes'],['course-level','level','All classes']]){const select=$(id),old=select.value;select.replaceChildren(new Option(label,''),...Array.from(new Set(courses.map(c=>c[key]))).sort().map(v=>new Option(v,v)));if(Array.from(select.options).some(o=>o.value===old))select.value=old;}
     $('score-session').textContent = data.config.session;
     if (!data.config.open) tell('Score submission is currently closed. Submitted score sheets can still be downloaded with the correct PIN.');
     choices();
@@ -98,10 +99,16 @@
       hidePin();downloadFeedback('');
       if (!data.locked) showEntry();
       tell(!data.locked && !data.config.open ? 'Score submission is currently closed.' : ''); choices();
-      $('selected-course').scrollIntoView({behavior:'smooth',block:'start'});
+      openSheet();
     } catch (error) { if(ticket===seq)tell(error.message); }
   }
-  $('course-search').addEventListener('input',choices);
+  function openSheet(){$('course-catalogue').hidden=true;$('selected-course').hidden=false;$('selected-title').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
+  $('change-course').addEventListener('click',()=>{if(submitting)return;$('selected-course').hidden=true;$('course-catalogue').hidden=false;$('resume-course').hidden=!current;$('course-search').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});});
+  $('resume-course').addEventListener('click',()=>{if(current)openSheet();});
+  $('course-search').addEventListener('input',()=>{coursePage=1;choices();});
+  for(const id of ['course-programme','course-level'])$(id).addEventListener('change',()=>{coursePage=1;choices();});
+  $('course-previous').addEventListener('click',()=>{if(coursePage>1){coursePage--;choices();}});
+  $('course-next').addEventListener('click',()=>{coursePage++;choices();});
   $('refresh-courses').addEventListener('click',()=>busy($('refresh-courses'),'Refreshing…',catalogue));
   $('score-entry-form').addEventListener('input',()=>{dirty=true;pending=null;});
   $('score-entry-form').addEventListener('submit',event=>{

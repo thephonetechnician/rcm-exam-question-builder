@@ -34,7 +34,7 @@ for(const block of blocks){
 console.log('PASS: day/night text, semantic status colours and form-boundary contrast.');
 const paletteCss=fs.readFileSync(new URL('../css/theme-palettes.css',import.meta.url),'utf8');
 const colours=block=>Object.fromEntries([...block.matchAll(/--([\w-]+):\s*(#[a-f\d]{3,6})\s*;/gi)].map(m=>[m[1],m[2].length===4?'#'+[...m[2].slice(1)].map(x=>x+x).join(''):m[2]]));
-for(const palette of ['classic','ocean'])for(const dark of [false,true]){
+for(const palette of ['classic','ocean','minimal'])for(const dark of [false,true]){
  const light=paletteCss.match(new RegExp(':root\\[data-palette="'+palette+'"\\]\\s*\\{([^}]+)\\}'))[1];
  const night=paletteCss.match(new RegExp(':root\\[data-palette="'+palette+'"\\]\\[data-theme="dark"\\]\\s*\\{([^}]+)\\}'))[1];
  const c={...colours(blocks[0]),...(dark?colours(blocks[1]):{}),...colours(light),...(dark?colours(night):{})};
@@ -42,3 +42,5 @@ for(const palette of ['classic','ocean'])for(const dark of [false,true]){
  assert.ok(ratio(c['control-border'],c.elevated)>=3,`${palette}/${dark} control contrast`);
 }
 console.log('PASS: Classic College and Ocean day/night palette contrast.');
+
+h=harness();h.window.RCMTheme.choosePalette('minimal');assert.equal(h.root.dataset.palette,'minimal');assert.equal(h.storage.get('rcm-theme-style'),'minimal');h.buttonEvents.click();assert.equal(h.root.dataset.palette,'minimal');assert.equal(h.root.dataset.theme,'dark');h.events.storage({key:'rcm-theme-style',newValue:'minimal'});assert.equal(h.root.dataset.palette,'minimal');console.log('PASS: Minimal palette persists and supports day/night mode.');

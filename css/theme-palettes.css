@@ -1,4 +1,22 @@
 :root { --shared-ink: var(--ink); --shared-line: var(--line); --rail-bg: #141d35; --hero-bg: radial-gradient(ellipse at 95% 0%,#8451ac77,transparent 55%),radial-gradient(ellipse at 70% 110%,#278d8b66,transparent 55%),linear-gradient(120deg,#182444,#2e2b58); }
+:root[data-palette="minimal"] {
+  --bg:#f6f6f6; --ink:#202020; --muted:#595959; --surface:#ffffff; --elevated:#f7f7f7; --soft:#ededed; --line:#d6d6d6;
+  --accent:#252525; --accent-hover:#000000; --on-accent:#ffffff; --accent-soft:#eeeeee; --accent-line:#999999; --maroon:var(--accent); --control-border:#818181;
+  --rail-bg:#202020; --hero-bg:#262626; --shadow:none; --strong-shadow:none;
+}
+:root[data-palette="minimal"][data-theme="dark"] {
+  --bg:#141414; --ink:#f2f2f2; --muted:#b8b8b8; --surface:#1e1e1e; --elevated:#262626; --soft:#303030; --line:#484848;
+  --accent:#eeeeee; --accent-hover:#ffffff; --on-accent:#202020; --accent-soft:#333333; --accent-line:#858585; --control-border:#888888;
+  --rail-bg:#171717; --hero-bg:#252525;
+}
+:root[data-palette="minimal"] body.portal-theme,:root[data-palette="minimal"] body.builder-theme { background:var(--bg); }
+:root[data-palette="minimal"] .portal-theme :is(.hero,.score-panel,.tool-card,.course-card,.score-course-choice,.admin-sidebar,.button),:root[data-palette="minimal"] .builder-theme #run-exam-app :is(.rea-card,.rea-letterhead) { box-shadow:none; border-radius:8px; }
+:root[data-palette="minimal"] .portal-theme .hero::after { display:none; }
+:root[data-palette="minimal"] .portal-theme .hero-label { color:#eeeeee; background:transparent; border-color:#858585; }
+:root[data-palette="minimal"] .portal-theme .hero p { color:#eeeeee; }
+:root[data-palette="minimal"] .portal-theme .button.light { background:#eeeeee; color:#202020; }
+:root[data-palette="minimal"] .portal-theme .side-nav a.selected { color:#ffffff; background:#ffffff18; border-color:#ffffff55; box-shadow:inset 3px 0 #eeeeee; }
+:root[data-palette="minimal"] .portal-theme .theme-picker select,:root[data-palette="minimal"] .theme-toggle { border-radius:8px; }
 :root[data-palette="classic"] {
   --bg:#f5f0e8; --ink:#332b28; --muted:#65564c; --surface:#fffdf8; --elevated:#f5eee5; --soft:#eee4d9; --line:#ded3c4;
   --accent:#8c1d2b; --accent-hover:#701722; --on-accent:#fff; --accent-soft:#f9e9e7; --accent-line:#ba8c87; --maroon:var(--accent); --control-border:#907d73;

@@ -1,5 +1,15 @@
 # Portal checkpoint — 19 November 2026
 
+## Compact score course picker and optional Minimal theme
+
+Six-result course pages with search/programme/class filters replace the endless
+catalogue. Course entry hides the picker; return/resume retains in-memory entries.
+Changing to another course preserves the existing unsaved-data confirmation.
+Minimal theme is available on all four pages, with day/night, remembered personal
+choices and authenticated school-default support in module 14. Print styles remain
+unchanged. Synthetic 50-course desktop/mobile behavior checked. See
+[installation and behavior](COMPACT_COURSES_AND_MINIMAL.md); nothing deployed.
+
 ## Assigned lecturer names on score sheets
 
 Module 09 returns the committed course lecturer on score entry and enforces their
