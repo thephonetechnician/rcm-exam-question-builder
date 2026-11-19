@@ -2,6 +2,7 @@
   'use strict';
   const $ = id => document.getElementById(id);
   let coursePage=1;const pageSize=6;let courses = [], current, snapshot, pending, dirty = false, submitting = false, seq = 0;
+  let verified=false,needsReload=false;const courseCache=window.ScoreCourseCache.create(ref=>window.ScoreAPI.request({action:'score.course',courseRef:ref},{background:true}));
   const fields = new Map(),manualStudents=new Map();
   const tell = text => { $('score-message').textContent = text; $('score-message').hidden = !text; };
   function downloadFeedback(text, success=false) {
@@ -83,14 +84,7 @@
       }
       const total=document.createElement('td'); total.className='score-total'; total.textContent='—';tr.append(total); fields.set(s.ref,{...inputs,total,row:tr}); return tr;
   }
-  async function loadCourse(ref) {
-    if (submitting) return;
-    if (dirty && !window.confirm('Leave this score sheet? Unsaved scores will be lost.')) return;
-    const ticket = ++seq; tell('Loading course…');
-    try {
-      const data = await window.ScoreAPI.request({action:'score.course',courseRef:ref});
-      if (ticket !== seq) return;
-      current=data; dirty=false; pending=null; snapshot=null; fields.clear();manualStudents.clear();
+  function displayCourse(data){      current=data; dirty=false; pending=null; snapshot=null; fields.clear();manualStudents.clear();
       $('selected-course').hidden=false; $('selected-code').textContent=data.course.code;
       $('selected-title').textContent=data.course.title; $('selected-meta').textContent=meta(data.course);
       $('course-state').textContent=data.locked?'Submitted · Locked':'Ready for score entry';
@@ -98,13 +92,36 @@
       $('locked-detail').textContent='Use the submission PIN to retrieve the submitted score sheet.';
       hidePin();downloadFeedback('');
       if (!data.locked) showEntry();
-      tell(!data.locked && !data.config.open ? 'Score submission is currently closed.' : ''); choices();
-      openSheet();
-    } catch (error) { if(ticket===seq)tell(error.message); }
+
   }
+  function freshness(text,ready=false,reload=false){verified=ready;needsReload=reload;$('course-freshness').textContent=text;$('reload-score-course').hidden=!reload;$('review-scores').disabled=!ready||reload||!current?.config?.open;}
+  async function loadCourse(ref,force=false){
+    if(submitting)return;
+    const same=current?.course.ref===ref;
+    if(dirty&&(!same||force)&&!window.confirm('Leave this score sheet? Unsaved scores will be lost.'))return;
+    const ticket=++seq,started=performance.now(),cached=force?null:courseCache.peek(ref);
+    if(same&&!force){openSheet();freshness('Checking the latest roster, lecturer and submission status…');}
+    else if(cached){displayCourse(cached);openSheet();freshness('Opened from this session. Checking the latest course data…');}
+    else{verified=false;tell('Loading course…');if(current)freshness('Loading the latest course data…');}
+    try{
+      const data=await courseCache.fetch(ref),requestMs=Math.round(performance.now()-started);
+      if(ticket!==seq)return;
+      const changed=current?.course.ref===ref&&(current.locked!==data.locked||current.revision!==data.revision||current.config?.open!==data.config?.open);
+      const renderStart=performance.now();
+      if(changed&&dirty&&!force){pending=null;freshness('The roster, lecturer assignment, marking limits or submission status changed. Your entries are kept on this page. Reload the latest sheet before submitting.',false,true);}
+      else{
+        if(force||!current||current.course.ref!==ref||changed)displayCourse(data);
+        freshness(data.locked?'Latest submission status checked.':'Latest course data checked.',true);
+        tell(!data.locked&&!data.config.open?'Score submission is currently closed.':'');
+      }
+      choices();if(!$('course-catalogue').hidden&&(!same||force))openSheet();
+      console.info('[RCM score loading]',{cached:!!cached,requestMs,serverMs:data.timing?.serverMs??null,rosterMs:data.timing?.rosterMs??null,renderMs:Math.round(performance.now()-renderStart)});
+    }catch(error){if(ticket!==seq)return;courseCache.clear();if(current?.course.ref===ref){freshness('Could not check the latest data. Your entries are kept. Reload before submitting.',false,true);}tell(error.message);}
+  }
+  $('reload-score-course').addEventListener('click',()=>{if(current)loadCourse(current.course.ref,true);});
   function openSheet(){$('course-catalogue').hidden=true;$('selected-course').hidden=false;$('selected-title').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
   $('change-course').addEventListener('click',()=>{if(submitting)return;$('selected-course').hidden=true;$('course-catalogue').hidden=false;$('resume-course').hidden=!current;$('course-search').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});});
-  $('resume-course').addEventListener('click',()=>{if(current)openSheet();});
+  $('resume-course').addEventListener('click',()=>{if(current)loadCourse(current.course.ref);});
   $('course-search').addEventListener('input',()=>{coursePage=1;choices();});
   for(const id of ['course-programme','course-level'])$(id).addEventListener('change',()=>{coursePage=1;choices();});
   $('course-previous').addEventListener('click',()=>{if(coursePage>1){coursePage--;choices();}});
@@ -112,7 +129,7 @@
   $('refresh-courses').addEventListener('click',()=>busy($('refresh-courses'),'Refreshing…',catalogue));
   $('score-entry-form').addEventListener('input',()=>{dirty=true;pending=null;});
   $('score-entry-form').addEventListener('submit',event=>{
-    event.preventDefault(); tell('');
+    event.preventDefault(); tell('');if(!verified||needsReload){tell('Wait for the latest course check, or reload the score sheet before submitting.');return;}
     const pin=$('submit-pin').value;
     if(pin!==$('confirm-pin').value){tell('The two PIN entries do not match.');$('confirm-pin').focus();return;}
     if(pin.trim()!==pin){tell('Remove spaces from the beginning or end of your PIN.');return;}
@@ -151,10 +168,10 @@
     current.students.push(student);manualStudents.set(student.ref,student);$('score-rows').append(scoreRow(student,current.students.length-1));orderRows();dirty=true;pending=null;updateProgress();$('add-student-dialog').close();fields.get(student.ref).ca.focus();
   });
   $('confirm-submit').addEventListener('click',()=>busy($('confirm-submit'),'Submitting…',async()=>{
-    if(submitting||!pending)return; submitting=true; $('cancel-submit').disabled=true;
+    if(submitting||!pending)return;if(!verified||needsReload)throw new Error('Reload the latest score sheet before submitting.'); submitting=true; $('cancel-submit').disabled=true;
     try {
       const data=await window.ScoreAPI.request(pending);
-      dirty=false; pending=null; current.locked=true; snapshot=null;
+      courseCache.clear();dirty=false; pending=null; current.locked=true; snapshot=null;
       $('confirm-dialog').close(); $('score-entry-form').reset(); $('score-entry-form').hidden=true; $('locked-course').hidden=false;
       $('course-state').textContent='Submitted · Locked';
       $('locked-detail').textContent=`${data.saved} student records saved. Version ${data.version}. Reference: ${data.submissionId}. Enter your PIN to download.`;

@@ -1,9 +1,9 @@
 (() => {
   'use strict';
-  window.ScoreAPI = Object.freeze({ request(payload) {
+  window.ScoreAPI = Object.freeze({ request(payload,options={}) {
     const url = window.RCM_SCORE_CONFIG?.apiUrl || '';
     if (!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url)) return Promise.reject(new Error('The score service is not configured.'));
-    const end=window.RCMActivity?.begin(/submit|save|commit|archive|batch/.test(payload.action)?'Saving your changes…':'Loading data. Please wait…')||(()=>{});
+    const end=options.background?(()=>{}):window.RCMActivity?.begin(/submit|save|commit|archive|batch/.test(payload.action)?'Saving your changes…':'Loading data. Please wait…')||(()=>{});
     return new Promise((resolve, reject) => {
       const requestId = crypto.randomUUID(), frame = document.createElement('iframe'), form = document.createElement('form'), input = document.createElement('input');
       frame.name = 'score_' + requestId; frame.hidden = true; frame.title = 'Score service response';

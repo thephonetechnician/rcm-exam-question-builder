@@ -1,5 +1,16 @@
 # Portal checkpoint — 19 November 2026
 
+## Faster repeat score-sheet openings
+
+Added an eight-course/five-minute response cache in browser memory, immediate
+cached display and a quiet background freshness check. Preview is gated until the
+check succeeds. Changed or failed checks keep dirty entries and require explicit
+reload; submission still validates server revisions and locks. Cache holds no PINs,
+marks or authorized downloads and is cleared after successful submission.
+Module 09 indexes students in one pass and returns non-sensitive timing fields.
+Unit/regression and artificial-delay browser tests passed. Replace module 09 and
+sync frontend; see [behavior and timing guide](FAST_SCORE_OPENING.md).
+
 ## Compact score course picker and optional Minimal theme
 
 Six-result course pages with search/programme/class filters replace the endless

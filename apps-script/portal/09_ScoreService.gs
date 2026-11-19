@@ -90,10 +90,11 @@ function scoreRoster_(book,ref) {
     if(classes[0])rosterClassRef=classes[0].ClassRef;
     if(classes[0])scoreEnrolments_(book,corrections).filter(function(e){return e.ClassRef===classes[0].ClassRef;}).forEach(function(e){const id=scoreText_(e.StudentRef);if(!seen[id]){seen[id]=true;ids.push(id);}});
   }
+  const studentIndex=new Map();students.forEach(function(s){const id=scoreText_(s.StudentRef),entry=studentIndex.get(id);if(entry)entry.count++;else studentIndex.set(id,{count:1,row:s});});
   const roster=ids.filter(function(id){return !rosterClassRef||!scoreAssignmentRemoved_(book,'students',rosterClassRef,id,corrections);}).map(function(id){
-    const found=students.filter(function(s){return scoreText_(s.StudentRef)===id;});
-    if(found.length!==1) throw new Error('Student reference missing or duplicated: '+id);
-    const s=found[0];if(scoreText_(s.Status)!=='Active')return null;
+    const found=studentIndex.get(id);
+    if(!found||found.count!==1) throw new Error('Student reference missing or duplicated: '+id);
+    const s=found.row;if(scoreText_(s.Status)!=='Active')return null;
     if(!scoreText_(s.Name))throw new Error('A registered student has no name.');
     return {ref:id,matNo:scoreText_(s.MatNo),name:scoreText_(s.Name)};
   }).filter(Boolean).sort(scoreStudentOrder_);
@@ -122,10 +123,11 @@ function scoreCatalogue_(book) {
   return {success:true,courses:courses,config:{session:cfg.session,caMax:cfg.caMax,examMax:cfg.examMax,open:cfg.open}};
 }
 function scoreLoad_(book,ref) {
+  const started=Date.now();
   const course=scoreCourse_(book,ref),latest=scoreLatest_(book,ref),cfg=scoreConfig_(book);
-  if(latest&&!latest.archived)return {success:true,locked:true,course:course};
-  const students=scoreRoster_(book,ref),lecturer=scoreSubmissionLecturer_(book,course);
-  return {success:true,locked:false,course:course,students:students,assignedLecturer:lecturer,revision:scoreRevision_(course,students,cfg,lecturer),config:{caMax:cfg.caMax,examMax:cfg.examMax,open:cfg.open}};
+  if(latest&&!latest.archived)return {success:true,locked:true,course:course,timing:{serverMs:Date.now()-started}};
+  const metadataMs=Date.now()-started,rosterStart=Date.now(),students=scoreRoster_(book,ref),rosterMs=Date.now()-rosterStart,lecturer=scoreSubmissionLecturer_(book,course);
+  return {success:true,locked:false,course:course,students:students,assignedLecturer:lecturer,timing:{serverMs:Date.now()-started,metadataMs:metadataMs,rosterMs:rosterMs},revision:scoreRevision_(course,students,cfg,lecturer),config:{caMax:cfg.caMax,examMax:cfg.examMax,open:cfg.open}};
 }
 function scoreSafePin_(pin) {if(typeof pin!=='string'||pin.length<8||pin.length>128||pin.trim()!==pin)throw new Error('Use a PIN of 8–128 characters without leading or trailing spaces.');return pin;}
 function scoreScore_(v,max,label) {if((typeof v!=='number'&&typeof v!=='string')||String(v).trim()===''||!Number.isFinite(Number(v))||Number(v)<0||Number(v)>max||Math.abs(Math.round(Number(v)*100)-Number(v)*100)>1e-8)throw new Error(label+' must be between 0 and '+max+' with at most two decimal places.');return Number(v);}

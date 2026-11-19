@@ -19,3 +19,10 @@ const originalLock=c.LockService.getScriptLock;c.LockService.getScriptLock=()=>{
 c.scoreRouteImpl_=()=>{c.scoreRead_(book,'ScoreCourses');return c.scoreLock_(()=>{assert.equal(c.scoreRead_(book,'ScoreCourses')[0].Title,'Changed while waiting');return {success:true};});};c.scoreRoute_({});c.LockService.getScriptLock=originalLock;c.scoreRouteImpl_=impl;
 const previous=bundle.context.courses.length;assert.equal(c.scoreRoute_({action:'score.admin.assignments.workspace',semester:'1',token}).context.courses.length,previous+1);
 console.log(`PASS: 151-course workspace reduces four requests to one and sheet reads ${baseline} → ${optimized}; equivalent data, authentication, isolated reads, post-write and post-lock freshness.`);
+const originalRead=c.scoreRead_;let studentLookups=0;
+const students=originalRead(book,'ScoreStudents').concat(Array.from({length:1000},(_,i)=>({StudentRef:'OTHER'+i,Name:'Other student',MatNo:'OTHER/'+i,Status:'Active'})));
+const indexed=students.map(s=>({...s,get StudentRef(){studentLookups++;return s.StudentRef;}}));
+c.scoreRead_=(b,name)=>name==='ScoreStudents'?indexed:originalRead(b,name);
+const roster=c.scoreRoster_(book,'DEMO001');assert.equal(roster.length,3);assert.equal(studentLookups,students.length,'Read each master student ID once, rather than once per roster member');c.scoreRead_=originalRead;
+const timed=c.scoreRoute_({action:'score.course',courseRef:'DEMO001'});assert.ok(timed.timing.serverMs>=0);assert.ok(timed.timing.rosterMs>=0);assert.ok(timed.timing.metadataMs>=0);
+console.log('PASS: roster builds a single student-ID index and exposes non-sensitive server timing measurements.');

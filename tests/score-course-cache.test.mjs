@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
+const window={};vm.runInNewContext(fs.readFileSync(new URL('../js/score-course-cache.js',import.meta.url),'utf8'),{window});
+let now=0,calls=0,resolve;
+const loader=ref=>{calls++;return Promise.resolve({course:{ref},students:[{ref:'S1',name:'Original'}],revision:String(calls)});};
+const cache=window.ScoreCourseCache.create(loader,{now:()=>now,ttl:100,limit:2});assert.equal(cache.peek('A'),null);
+const a=cache.fetch('A'),same=cache.fetch('A');assert.equal(a,same);await a;assert.equal(calls,1);let hit=cache.peek('A');hit.students[0].name='Changed';assert.equal(cache.peek('A').students[0].name,'Original');
+await cache.fetch('B');cache.peek('A');await cache.fetch('C');assert.equal(cache.peek('B'),null);assert.ok(cache.peek('A'));now=100;assert.equal(cache.peek('A'),null);
+const race=window.ScoreCourseCache.create(()=>new Promise(r=>resolve=r));const old=race.fetch('A');await Promise.resolve();race.clear();resolve({revision:'old'});await old;assert.equal(race.peek('A'),null);
+const errors=window.ScoreCourseCache.create(async()=>{throw Error('offline');});await assert.rejects(errors.fetch('A'),/offline/);assert.equal(errors.peek('A'),null);
+console.log('PASS: short-lived in-memory course responses, request deduplication, isolated copies, bounded eviction, expiry, failed requests and invalidation during an outstanding request.');

@@ -16,10 +16,10 @@
   <script defer src="assets/vendor/jspdf.umd.min.js"></script>
   <script defer src="assets/vendor/jspdf.plugin.autotable.min.js"></script>
   <script defer src="js/score-config.js"></script>
-  <script defer src="js/score-api.js?v=2026-11-19.1"></script><script defer src="js/branding.js?v=2026-11-19.1"></script>
+  <script defer src="js/score-api.js?v=2026-11-19.4"></script><script defer src="js/branding.js?v=2026-11-19.1"></script>
   <script defer src="js/score-order.js"></script>
   <script defer src="js/score-exports.js?v=2026-11-19.1"></script>
-  <script defer src="js/score-submission.js?v=2026-11-19.3"></script>
+  <script defer src="js/score-course-cache.js?v=2026-11-19.4"></script><script defer src="js/score-submission.js?v=2026-11-19.4"></script>
 <style>.course-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px}.course-pagination .button{width:auto}.course-pagination span{font-size:13px;color:var(--muted)}#selected-title:focus-visible{outline:2px solid currentColor;outline-offset:4px}</style></head>
 <body class="portal-theme">
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -36,7 +36,7 @@
     </section>
     <section id="selected-course" class="score-panel" aria-labelledby="selected-title" hidden>
       <p><button type="button" class="button secondary" id="change-course">← Choose another course</button></p><div class="section-heading"><div><p class="eyebrow" id="selected-code"></p><h2 id="selected-title" tabindex="-1"></h2><p id="selected-meta"></p></div><span class="badge" id="course-state"></span></div>
-      <form id="score-entry-form" hidden>
+      <p id="course-freshness" role="status" class="muted"></p><p><button id="reload-score-course" class="button secondary" type="button" hidden>Reload latest score sheet</button></p><form id="score-entry-form" hidden>
         <div class="score-fields"><div><label for="score-lecturer">Lecturer full name</label><input id="score-lecturer" aria-describedby="score-lecturer-help" required minlength="2" maxlength="150" autocomplete="name"><small id="score-lecturer-help"></small></div><div><label for="score-date">Date examination was written</label><input id="score-date" type="date" required></div></div>
         <div class="score-roster-heading"><h3>Student score sheet</h3><span id="entry-progress" aria-live="polite">0 completed</span><button id="open-add-student" class="button secondary" type="button">+ Add student</button></div>
         <p class="muted" id="score-limits"></p>
