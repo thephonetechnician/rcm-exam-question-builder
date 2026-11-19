@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
-  let coursePage=1;const pageSize=6;let courses = [], current, snapshot, pending, dirty = false, submitting = false, seq = 0;
+  let coursePage=1,loadingRef='';const pageSize=6;let courses = [], current, snapshot, pending, dirty = false, submitting = false, seq = 0;
   let verified=false,needsReload=false;const courseCache=window.ScoreCourseCache.create(ref=>window.ScoreAPI.request({action:'score.course',courseRef:ref},{background:true}));
   const fields = new Map(),manualStudents=new Map();
   const tell = text => { $('score-message').textContent = text; $('score-message').hidden = !text; };
@@ -25,6 +25,7 @@
     $('score-course-list').replaceChildren(...found.slice(offset,offset+pageSize).map(c => {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'score-course-choice'; button.setAttribute('aria-pressed', String(current?.course.ref === c.ref));
       const badge = document.createElement('span'); badge.className = 'badge ' + (c.locked ? '' : 'ready'); badge.textContent = c.locked ? 'Submitted · Locked' : 'Score entry';
+      if(loadingRef===c.ref){button.disabled=true;button.setAttribute('aria-busy','true');badge.textContent='Loading score sheet…';const spinner=document.createElement('span');spinner.className='activity-spinner';spinner.setAttribute('aria-hidden','true');badge.prepend(spinner);}
       const code = document.createElement('span'); code.className = 'course-code'; code.textContent = c.code;
       const title = document.createElement('strong'); title.textContent = c.title;
       const details = document.createElement('small'); details.textContent = meta(c);
@@ -100,9 +101,12 @@
     const same=current?.course.ref===ref;
     if(dirty&&(!same||force)&&!window.confirm('Leave this score sheet? Unsaved scores will be lost.'))return;
     const ticket=++seq,started=performance.now(),cached=force?null:courseCache.peek(ref);
+    loadingRef=ref;choices();
+    const endLoading=window.RCMActivity?.begin(same&&!force||cached?'Checking score sheet updates…':'Loading score sheet. Please wait…')||(()=>{});
     if(same&&!force){openSheet();freshness('Checking the latest roster, lecturer and submission status…');}
     else if(cached){displayCourse(cached);openSheet();freshness('Opened from this session. Checking the latest course data…');}
     else{verified=false;tell('Loading course…');if(current)freshness('Loading the latest course data…');}
+    $('course-freshness').classList.add('course-checking');
     try{
       const data=await courseCache.fetch(ref),requestMs=Math.round(performance.now()-started);
       if(ticket!==seq)return;
@@ -117,6 +121,7 @@
       choices();if(!$('course-catalogue').hidden&&(!same||force))openSheet();
       console.info('[RCM score loading]',{cached:!!cached,requestMs,serverMs:data.timing?.serverMs??null,rosterMs:data.timing?.rosterMs??null,renderMs:Math.round(performance.now()-renderStart)});
     }catch(error){if(ticket!==seq)return;courseCache.clear();if(current?.course.ref===ref){freshness('Could not check the latest data. Your entries are kept. Reload before submitting.',false,true);}tell(error.message);}
+    finally{endLoading();if(ticket===seq){loadingRef='';$('course-freshness').classList.remove('course-checking');choices();}}
   }
   $('reload-score-course').addEventListener('click',()=>{if(current)loadCourse(current.course.ref,true);});
   function openSheet(){$('course-catalogue').hidden=true;$('selected-course').hidden=false;$('selected-title').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
