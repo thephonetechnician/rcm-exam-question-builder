@@ -346,3 +346,12 @@ then supply the staging `/exec` URL in the public frontend config and test login
 Follow `apps-script/portal/README.md`; keep both live applications unchanged.
 After that, adapt score reads/writes with approved-paper and shared-course
 authorization checks before enabling portal result submission.
+# 25 November 2026: submission contention handling
+
+Added short submission lock acquisition with structured busy responses,
+request-scoped sheet handle caching and bounded browser retries that preserve the
+original operation ID and score payload. Fresh authoritative validation and the
+global writer lock remain in place. See `SUBMISSION_CONCURRENCY_FIX.md` for local
+verification and staging deployment instructions. No hosted load test was run as
+part of this change; ten-user hosted reliability remains to be verified after
+deployment.

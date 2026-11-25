@@ -20,7 +20,7 @@ const weak=structuredClone(p);weak.pin='123';assert.throws(()=>call(weak),/PIN/)
 const rosterChange=structuredClone(p);sheets.get('ScoreStudents').data[1][3]='Updated Student';assert.throws(()=>call(rosterChange),/changed/);sheets.get('ScoreStudents').data[1][3]='Sample Student One';
 sheets.get('Config').data[4][1]='FALSE';assert.throws(()=>call(p),/closed/);sheets.get('Config').data[4][1]='TRUE';
 assert.equal(sheets.get('ScoreSubmissions').data.length,1);
-controls.held=true;assert.throws(()=>call(p),/Concurrent lock/);controls.held=false;
+controls.held=true;assert.throws(()=>call(p),e=>e.code==='SCORE_BUSY'&&e.retryable===true);controls.held=false;
 // An entries write followed by a failed header write never exposes a partial submission.
 controls.failTable='ScoreSubmissions';assert.throws(()=>call(p),/write interruption/);assert.equal(load().locked,false);
 const committed=call(p);assert.equal(committed.version,1);assert.equal(committed.saved,3);

@@ -21,7 +21,7 @@ const context=vm.createContext({Date,JSON,Object,Number,String,Math,Array,Boolea
   PropertiesService:{getScriptProperties:()=>({getProperty:k=>props.get(k)??null,getProperties:()=>Object.fromEntries(props),setProperty:(k,v)=>props.set(k,v),deleteProperty:k=>props.delete(k)})},
   SpreadsheetApp:{openById:id=>{const b=books.get(id);assert.ok(b,'Unknown test spreadsheet');return b;},flush:()=>{}},
   Utilities:{DigestAlgorithm:{SHA_256:'SHA256'},Charset:{UTF_8:'utf8'},getUuid:randomUUID,base64Decode:v=>Array.from(Buffer.from(v,'base64')),computeDigest:(_a,v)=>[...createHash('sha256').update(v).digest()],formatDate:date=>date.toISOString().slice(0,10)},
-  LockService:{getScriptLock:()=>({waitLock:()=>{if(held)throw new Error('Concurrent lock blocked');held=true;},releaseLock:()=>{held=false;}})},
+  LockService:{getScriptLock:()=>({tryLock:()=>{if(held)return false;held=true;return true;},waitLock:()=>{if(held)throw new Error('Concurrent lock blocked');held=true;},releaseLock:()=>{held=false;}})},
   CacheService:{getScriptCache:()=>({get:k=>cache.get(k)??null,put:(k,v)=>cache.set(k,v),remove:k=>cache.delete(k)})},
   HtmlService:{XFrameOptionsMode:{ALLOWALL:'allow'},createHtmlOutput:html=>({html,setXFrameOptionsMode(){return this;}})}
 });

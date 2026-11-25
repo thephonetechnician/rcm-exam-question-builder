@@ -30,10 +30,16 @@ function scoreBook_() {
 }
 // Never shared between requests. Writes and lock acquisition discard the snapshot.
 let scoreReadContext_=null;
+let scoreSheetContext_=null;
+function scoreSheet_(book,name){
+  if(!scoreSheetContext_)return book.getSheetByName(name);
+  let sheets=scoreSheetContext_.get(book);if(!sheets){sheets=new Map();scoreSheetContext_.set(book,sheets);}
+  if(!sheets.has(name))sheets.set(name,book.getSheetByName(name));return sheets.get(name);
+}
 function scoreRead_(book, name) {
   let tables;
   if(scoreReadContext_){tables=scoreReadContext_.get(book);if(!tables){tables=new Map();scoreReadContext_.set(book,tables);}if(tables.has(name))return tables.get(name).map(function(r){return Object.assign({},r);});}
-  const sh=book.getSheetByName(name);
+  const sh=scoreSheet_(book,name);
   if(!sh) throw new Error('Run setupScoreMvp_ first. Missing tab: '+name);
   const values=sh.getDataRange().getValues();
   const headers=(values.shift()||[]).map(String);
@@ -45,7 +51,7 @@ function scoreRead_(book, name) {
 function scoreAppend_(book,name,rows) {
   if(!rows.length) return;
   if(scoreReadContext_)scoreReadContext_.clear();
-  const sh=book.getSheetByName(name), width=rows[0].length;
+  const sh=scoreSheet_(book,name), width=rows[0].length;
   const first=sh.getLastRow()+1;
   if(sh.getMaxRows()<first+rows.length-1) sh.insertRowsAfter(sh.getMaxRows(),first+rows.length-1-sh.getMaxRows());
   // Force strings to remain literal: lecturer/student names cannot become formulas.
@@ -53,6 +59,11 @@ function scoreAppend_(book,name,rows) {
   sh.getRange(first,1,rows.length,width).setNumberFormat('@').setValues(safe);
 }
 function scoreLock_(fn) { const lock=LockService.getScriptLock();lock.waitLock(20000);if(scoreReadContext_)scoreReadContext_.clear();try{return fn();}finally{lock.releaseLock();} }
+function scoreSubmissionLock_(fn){
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(1000)){const error=new Error('Another score sheet is being saved. Please wait while this submission is retried.');error.code='SCORE_BUSY';error.retryable=true;throw error;}
+  if(scoreReadContext_)scoreReadContext_.clear();try{return fn();}finally{lock.releaseLock();}
+}
 function scoreConfig_(book) {
   const rows=scoreRead_(book,'Config'), lookup={};
   rows.forEach(function(r){lookup[scoreText_(r.Key)]=r.Value;});
@@ -133,16 +144,19 @@ function scoreSafePin_(pin) {if(typeof pin!=='string'||pin.length<8||pin.length>
 function scoreScore_(v,max,label) {if((typeof v!=='number'&&typeof v!=='string')||String(v).trim()===''||!Number.isFinite(Number(v))||Number(v)<0||Number(v)>max||Math.abs(Math.round(Number(v)*100)-Number(v)*100)>1e-8)throw new Error(label+' must be between 0 and '+max+' with at most two decimal places.');return Number(v);}
 function scorePayload_(data) {return scoreHash_(JSON.stringify({courseRef:data.courseRef,revision:data.revision,lecturerName:scoreText_(data.lecturerName),examDate:data.examDate,pinHash:scoreHash_(data.pin),entries:data.entries,additions:data.additions||[]}));}
 function scoreSubmit_(book,data) {
-  return scoreLock_(function(){
+    // Reject malformed requests and calculate the retry fingerprint before queuing.
     const ref=scoreText_(data.courseRef),op=scoreText_(data.operationId),pin=scoreSafePin_(data.pin);
     if(!/^[a-z0-9-]{20,80}$/i.test(op))throw new Error('Submission reference is invalid. Reload the page.');
     if(!Array.isArray(data.entries)||data.entries.length>1000)throw new Error('Invalid score entries.');
     const payloadHash=scorePayload_(data);
+  return scoreSubmissionLock_(function(){
     const previous=scoreRead_(book,'ScoreSubmissions').filter(function(s){return s.OperationID===op;})[0];
     if(previous){if(previous.PayloadHash!==payloadHash)throw new Error('This retry differs from the original submission. Refresh the course before continuing.');return {success:true,submissionId:previous.SubmissionID,version:Number(previous.Version),saved:Number(previous.RecordCount),replayed:true};}
-    const cfg=scoreConfig_(book);if(!cfg.open)throw new Error('Score submission is currently closed.');
-    const course=scoreCourse_(book,ref),latest=scoreLatest_(book,ref);
+    // An already-locked course should not occupy the writer while its roster loads.
+    const latest=scoreLatest_(book,ref);
     if(latest&&!latest.archived)throw new Error('This course is already submitted and locked. Use your PIN to download it.');
+    const cfg=scoreConfig_(book);if(!cfg.open)throw new Error('Score submission is currently closed.');
+    const course=scoreCourse_(book,ref);
     const registered=scoreRoster_(book,ref);
     const assignedLecturer=scoreSubmissionLecturer_(book,course);
     if(data.revision!==scoreRevision_(course,registered,cfg,assignedLecturer))throw new Error('The course, roster, lecturer assignment or marking settings changed. Reload the course and review the scores.');
@@ -229,7 +243,7 @@ function scoreArchive_(book,data) {
   });
 }
 function scoreRoute_(data) {
-  const previous=scoreReadContext_;scoreReadContext_=new Map();try{return scoreRouteImpl_(data);}finally{scoreReadContext_=previous;}
+  const previous=scoreReadContext_,previousSheets=scoreSheetContext_;scoreReadContext_=new Map();scoreSheetContext_=new Map();try{return scoreRouteImpl_(data);}finally{scoreReadContext_=previous;scoreSheetContext_=previousSheets;}
 }
 function scoreRouteImpl_(data) {
   if(data.action==='score.admin.login')return scoreAdminLogin_(data);
@@ -256,7 +270,7 @@ function scoreRouteImpl_(data) {
 function scoreResponse_(data,requestId) {
   const origin=PropertiesService.getScriptProperties().getProperty('PORTAL_FRONTEND_ORIGIN')||'';
   if(!/^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(origin)&&!/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin))throw new Error('Configure PORTAL_FRONTEND_ORIGIN.');
-  let result;try{result=scoreRoute_(data);}catch(error){result={success:false,error:error.message||'The score service is unavailable.'};}
+  let result;try{result=scoreRoute_(data);}catch(error){result={success:false,error:error.message||'The score service is unavailable.'};if(error.code==='SCORE_BUSY'){result.code='SCORE_BUSY';result.retryable=true;}}
   const message=JSON.stringify({type:'RCM_SCORE_RESPONSE',requestId:String(requestId||''),data:result}).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
   return HtmlService.createHtmlOutput('<!doctype html><meta charset="utf-8"><script>window.top.postMessage('+message+','+JSON.stringify(origin)+');</script>').setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
