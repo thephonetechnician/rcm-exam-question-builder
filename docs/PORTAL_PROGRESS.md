@@ -1,4 +1,27 @@
-# Portal checkpoint — 19 November 2026
+# Portal checkpoint — 25 November 2026
+
+## Dedicated public score-sheet tracker
+
+Clarified the public tracking activity as Score-sheet submission tracker. Each
+class table now has exactly Class, Lecturer, Course and Score-sheet status columns,
+one course per row, with Submitted/Not submitted filtering. Reopened courses stay
+Not submitted and retain a correction label. Public responses omit exam-paper
+fields and skip exam metadata reads; authenticated admin reports still retain
+their separate paper tracking. Existing public URL and homepage entry are preserved.
+Tests and synthetic browser checks passed; no live deployment or data changes.
+
+## Public class tracking and prominent lecturer score entry
+
+Homepage now leads with a Submit scores section and header shortcut. Sidebar/tools
+and score page link to a new public submission-tracking page. The public table groups
+lecturers and submitted/outstanding courses by programme/class, with semester,
+class, status and search filters. Manual names and unassigned courses are labelled.
+Module 13 adds a strict public projection and module 09 routes score.tracking.
+Private students, marks, emails, PIN material and audit data are excluded. Admin
+reports remain private. Existing paper metadata status is reused with unavailable
+data explicitly labelled. Tests/browser checks passed using synthetic records only.
+Replace modules 09/13 and sync frontend; see
+[installation and behavior](PUBLIC_SUBMISSION_TRACKING.md). No live deployment.
 
 ## Faster repeat score-sheet openings
 

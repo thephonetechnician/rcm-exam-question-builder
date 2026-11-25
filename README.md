@@ -1,5 +1,8 @@
 # RCM Examinations & Records
 
+Lecturers can use the prominent **Submit scores** action and public class-based
+submission tracking without signing in. See [public tracking setup and scope](docs/PUBLIC_SUBMISSION_TRACKING.md).
+
 The lecturer workspace loads settings, courses, lecturers and reports in one
 request. Backend helpers reuse sheet reads within that request, with fresh reads
 after writes and on subsequent requests. See [loading update installation and

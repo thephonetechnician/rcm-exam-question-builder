@@ -73,10 +73,10 @@ function scoreExamMetadata_(ctx){
     return {available:true,rows:rows,message:'Paper status matches course metadata. Older records without Lecturer IDs are labelled ID unverified; ambiguous courses need matching.'};
   }catch(_){return {available:false,rows:[],message:'Exam metadata is unavailable. Check the exam spreadsheet ID, headers and backend access. Score tracking remains available.'};}
 }
-function scoreAssignmentReport_(book,semester){
+function scoreAssignmentReport_(book,semester,scoreOnly){
   const ctx=scoreAssignmentContext_(book,semester),assignments=scoreLecturerAssignments_(book).filter(function(r){return r.Session===ctx.session&&r.Semester===ctx.semester;}),subs=scoreRead_(book,'ScoreSubmissions'),events=scoreRead_(book,'ScoreHistory'),archived={};
   events.forEach(function(e){if(e.Action==='Archived')archived[e.SubmissionID]=true;});
-  const lecturers=Object.create(null),papers=scoreExamMetadata_(ctx);
+  const lecturers=Object.create(null),papers=scoreOnly?{available:false,rows:[],message:''}:scoreExamMetadata_(ctx);
   scoreLecturerDirectory_(book).forEach(function(p){lecturers[scoreNorm_(p.id)]={id:p.id,name:p.name,total:0,submitted:0,papersSubmitted:0};});
   const courses=ctx.courses.map(function(c){
     const a=assignments.filter(function(r){return r.CourseRef===c.ref;})[0],latest=subs.filter(function(s){return s.CourseRef===c.ref;}).sort(function(x,y){return Number(y.Version)-Number(x.Version);})[0];
@@ -88,6 +88,19 @@ function scoreAssignmentReport_(book,semester){
     return {course:c,lecturerId:a?a.LecturerID:'',lecturerName:a?a.LecturerName:'',scoreStatus:status,submittedAt:latest?latest.SubmittedAt:'',paperStatus:paperStatus};
   });
   return {success:true,session:ctx.session,semester:ctx.semester,courses:courses,lecturers:Object.keys(lecturers).map(function(k){return lecturers[k];}),paperTrackingAvailable:papers.available,paperTrackingMessage:papers.message};
+}
+/* Explicit public projection. Never return admin reports or submission objects. */
+function scorePublicTracking_(book,semester){
+  const report=scoreAssignmentReport_(book,semester,true),classes=new Map(),latest=new Map();
+  scoreRead_(book,'ScoreSubmissions').forEach(function(s){const prior=latest.get(s.CourseRef);if(!prior||Number(s.Version)>Number(prior.Version))latest.set(s.CourseRef,s);});
+  report.courses.forEach(function(r){
+    const c=r.course,key=JSON.stringify([c.programme,c.level]);if(!classes.has(key))classes.set(key,{programme:c.programme,level:c.level,people:new Map()});
+    const group=classes.get(key),saved=latest.get(c.ref),manual=!r.lecturerId&&saved?scoreText_(saved.LecturerName):'',name=r.lecturerName||manual||'No lecturer assigned';
+    const personKey=r.lecturerId?'id:'+r.lecturerId:manual?'manual:'+scoreNorm_(manual):'unassigned';
+    if(!group.people.has(personKey))group.people.set(personKey,{lecturerName:name,assignmentSource:r.lecturerId?'Assigned lecturer':manual?'Name on score sheet':'Unassigned',courses:[]});
+    group.people.get(personKey).courses.push({code:c.code,title:c.title,scoreStatus:r.scoreStatus});
+  });
+  return {success:true,session:report.session,semester:report.semester,updatedAt:new Date().toISOString(),classes:Array.from(classes.values()).map(function(g){return {programme:g.programme,level:g.level,lecturers:Array.from(g.people.values()).sort(function(a,b){return a.lecturerName.localeCompare(b.lecturerName);})};}).sort(function(a,b){return (a.programme+' '+a.level).localeCompare(b.programme+' '+b.level,undefined,{numeric:true});})};
 }
 function scoreWorkspaceRoute_(book,data){
   if(data.action==='score.admin.assignments.workspace')return {success:true,config:scoreConfig_(book),context:scoreAssignmentContext_(book,data.semester),lecturers:scoreLecturerDirectory_(book),report:scoreAssignmentReport_(book,data.semester)};

@@ -234,6 +234,7 @@ function scoreRoute_(data) {
 function scoreRouteImpl_(data) {
   if(data.action==='score.admin.login')return scoreAdminLogin_(data);
   const book=scoreBook_();
+  if(data.action==='score.tracking')return scorePublicTracking_(book,data.semester);
   if(data.action.indexOf('score.admin.lecturers.')===0){scoreAdmin_(data.token);return scoreDirectoryRoute_(book,data);}
   if(data.action==='score.branding')return scoreBranding_(book);
   if(data.action==='score.admin.branding'){scoreAdmin_(data.token);return scoreBranding_(book);}
