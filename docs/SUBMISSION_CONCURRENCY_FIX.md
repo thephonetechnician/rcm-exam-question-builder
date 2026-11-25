@@ -2,7 +2,10 @@
 
 The last two hosted ten-course staging tests each saved four submissions and
 returned six lock timeouts. Saved records were correct, but burst handling was
-insufficient. These changes have not yet been tested against the hosted deployment.
+insufficient. The post-fix hosted run `QAD663F348` subsequently saved all ten
+synthetic submissions using the portal retry helper. All thirty score rows were
+verified independently. Completion ranged from 7.464 to 74.918 seconds, with 64
+total attempts. See `TEN_COURSE_STAGING_RESULTS.md` for evidence and limitations.
 
 ## Changes
 
@@ -44,4 +47,5 @@ independent concurrent writers. Neither is a hosted load benchmark.
    record integrity separately. An old harness that sends one raw POST per user
    does not exercise the new client retry behavior.
 
-No hosted submissions were sent while implementing this fix.
+No hosted submissions were sent while implementing this fix. After the user
+confirmed deployment, the separate staging run above exercised the new behavior.

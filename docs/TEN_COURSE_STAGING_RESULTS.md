@@ -1,5 +1,56 @@
 # Ten different course submissions — Google staging
 
+## Post-fix run — 25 November 2026
+
+Fixture prefix: `QAD663F348`. Ten fresh synthetic courses, each with three fake
+students, were added only to the confirmed staging workbook. All fixtures were
+read back before submitting. The native cell metadata showed the existing text
+formats were preserved; no visual layout review was performed for these backend
+test fixtures.
+
+Ten clients started within **9.07 ms**. This run sent real Google-hosted requests
+using the exact `ScoreSubmitRetry.run` helper shipped with the portal. Transport
+was Node HTTP POST with the Apps Script response wrapper decoded; it was not a
+ten-browser end-to-end test.
+
+**10/10 eventually saved, 0 unconfirmed.** One succeeded on its first attempt;
+the other nine retried structured `SCORE_BUSY` responses. There were 64 total
+attempts (54 busy responses and 10 successful responses), all within the configured
+retry limits. The structured busy responses confirm the new submission-lock
+behavior was present in the staging deployment.
+
+| Course suffix | Completion time | Attempts |
+| --- | ---: | ---: |
+| 01 | 51.381 s | 8 |
+| 02 | 14.095 s | 2 |
+| 03 | 45.178 s | 7 |
+| 04 | 67.455 s | 11 |
+| 05 | 7.464 s | 1 |
+| 06 | 26.460 s | 5 |
+| 07 | 19.595 s | 4 |
+| 08 | 61.172 s | 9 |
+| 09 | 36.000 s | 6 |
+| 10 | 74.918 s | 11 |
+
+Total burst duration: **74.928 seconds**. Roster preflight reads took 6.474–8.947
+seconds and were completed before the measured burst.
+
+Independent connector reads of `ScoreSubmissions!A1:L40` and
+`ScoreEntries!A1:H100` verified ten distinct version-1 headers, ten distinct
+operation IDs and exactly thirty matching score rows. Each student reference, CA,
+exam score and total matched its synthetic input. No duplicate submissions or
+orphan rows were found for this run. PIN download and response-loss replay were
+not repeated in this hosted test; those remain covered by the local test suite.
+
+This passes the measured small-course burst with retries. It does not establish
+capacity for ten full-size classes, sustained traffic, or a maximum response-time
+guarantee. Writes remain serialized and the last client waited about 75 seconds.
+Synthetic records remain in staging as test evidence; existing records were not
+edited. The detailed report and private synthetic inputs are in the parent
+workspace outputs directory, named `staging-QAD663F348-report.json` and
+`staging-QAD663F348-private-inputs.json`. The runner is
+`ten-staging-with-retries.mjs` in that directory.
+
 ## Repeat run — 25 November 2026
 
 Fresh fixture prefix: QA3A765DBE. Ten new courses, each with three fake students,

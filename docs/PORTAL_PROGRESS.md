@@ -348,6 +348,12 @@ After that, adapt score reads/writes with approved-paper and shared-course
 authorization checks before enabling portal result submission.
 # 25 November 2026: submission contention handling
 
+Post-deployment staging verification: run `QAD663F348` saved 10/10 distinct
+synthetic courses using bounded portal retries. Independent sheet reads verified
+30 correct score rows, no duplicate submissions and no orphan rows. Completion
+took 7.464–74.918 seconds; 64 requests were needed. This covers three students per
+course, not full-size-class capacity. See `TEN_COURSE_STAGING_RESULTS.md`.
+
 Added short submission lock acquisition with structured busy responses,
 request-scoped sheet handle caching and bounded browser retries that preserve the
 original operation ID and score payload. Fresh authoritative validation and the
