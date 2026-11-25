@@ -1,5 +1,43 @@
 # Ten different course submissions — Google staging
 
+## Repeat run — 25 November 2026
+
+Fresh fixture prefix: QA3A765DBE. Ten new courses, each with three fake students,
+were added to the staging ScoreCourses, ScoreStudents and ScoreRegistrations tabs.
+Native values and text formatting were read back before the run. Other records
+were preserved. The local code still used the same script-wide 20-second lock;
+no performance implementation change was found before this repeat.
+
+All ten rosters were validated first. The ten distinct submissions were dispatched
+within **4.81 ms**, without retries. Total burst duration was **27.292 seconds**.
+
+| Course suffix | Outcome | Duration |
+| --- | --- | ---: |
+| 01 | Saved | 12.856 s |
+| 02 | Lock timeout | 21.391 s |
+| 03 | Lock timeout | 21.623 s |
+| 04 | Saved | 7.994 s |
+| 05 | Lock timeout | 23.240 s |
+| 06 | Saved | 27.281 s |
+| 07 | Lock timeout | 21.749 s |
+| 08 | Lock timeout | 21.864 s |
+| 09 | Saved | 17.054 s |
+| 10 | Lock timeout | 21.212 s |
+
+Independent spreadsheet verification found four unique version-1 submission headers
+and twelve score rows. Every CA, exam and total matched the input for that course
+and student. No duplicate course submissions or orphan/partial rows were found
+for this run. The six failed courses had no saved submissions. Test PIN downloads
+were not part of this repeat verification; stored rows were verified directly.
+
+**Conclusion unchanged: 4/10 saved, 6/10 lock timeouts.** This is not sufficient
+reliability for a ten-user simultaneous submission burst, even at three students
+per course. Test fixtures are retained for evidence; no failed requests were retried.
+The runner and detailed report are in the parent workspace outputs directory:
+`repeat-ten-staging-test.mjs` and `staging-QA3A765DBE-report.json`.
+
+## First run
+
 Date: 25 November 2026. Fixture prefix: QAECB033A4.
 
 After the Drive connection switched to the project account, the existing ten-course
