@@ -1,0 +1,2 @@
+# Prevent an accidental nested checkout from becoming a broken submodule again.
+/rcm-exam-question-builder/
